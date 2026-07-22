@@ -1,0 +1,92 @@
+@import "tailwindcss";
+
+/* ألوان النادي — مشتقة من الشعار الذهبي وأغلفة المصاحف في مطبوعاته */
+@theme {
+  --color-ink: #14100b; /* فحميّ دافئ — جلد المصحف */
+  --color-ink-soft: #201910;
+  --color-ink-line: #3a2f1e;
+  --color-gold: #c9a227;
+  --color-gold-light: #e8c96a;
+  --color-gold-deep: #8c6d14;
+  --color-parchment: #f4eddc; /* ورق المصحف */
+  --color-parchment-deep: #e9dfc6;
+  --color-navy: #232c54; /* النسخة الكحلية من الشعار */
+  --color-tick-green: #2e8b46; /* أتقن — من جدول التتبع الحقيقي */
+  --color-tick-red: #c04545; /* لم يُتقن */
+
+  --font-display: var(--font-reem-kufi);
+  --font-body: var(--font-tajawal);
+  --font-naskh: var(--font-noto-naskh);
+}
+
+/* النص المشكول يحتاج سطرًا أوسع وإلا تصادمت الحركات */
+.vocalized {
+  font-family: var(--font-noto-naskh);
+  line-height: 2.35;
+}
+
+/* خيط ذهبي يخيط أقسام الصفحة — كإطار صفحة المصحف المذهّب */
+.thread {
+  position: absolute;
+  inset-inline-start: calc(50% - 0.5px);
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    color-mix(in srgb, var(--color-gold) 45%, transparent) 8%,
+    color-mix(in srgb, var(--color-gold) 45%, transparent) 92%,
+    transparent
+  );
+  pointer-events: none;
+}
+
+@media (max-width: 767px) {
+  .thread {
+    inset-inline-start: 1.25rem;
+  }
+}
+
+/* عقدة معينية على الخيط — إيقاع علامات الأرباع في المصحف */
+.thread-node {
+  width: 0.75rem;
+  height: 0.75rem;
+  background: var(--color-gold);
+  transform: rotate(45deg);
+  flex-shrink: 0;
+}
+
+/* حلقة وميض هادئة خلف الشعار في الواجهة */
+@keyframes glow {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.06);
+  }
+}
+.hero-glow {
+  animation: glow 7s ease-in-out infinite;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-glow {
+    animation: none;
+  }
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+::selection {
+  background: var(--color-gold);
+  color: var(--color-ink);
+}
