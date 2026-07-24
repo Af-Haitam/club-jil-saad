@@ -1,0 +1,289 @@
+// نصوص الواجهة الثابتة — ليست محتوى يحرّره المدير (ذاك في site-content.ts)
+// بل عبارات الواجهة: alt، aria، تسميات الحقول.
+
+export const strings = {
+  logoAlt: "شعار نادي الجيل الصاعد",
+  logoAltHero: "شعار نادي الجيل الصاعد — ريشة ذهبية",
+  navBrand: "الجيل الصاعد",
+  menuOpen: "افتح القائمة",
+  menuClose: "أغلق القائمة",
+  skipToContent: "انتقل إلى المحتوى",
+  footerNavLabel: "روابط التذييل",
+  contactTitle: "تواصل معنا",
+  contactEmail: "البريد",
+  contactPhone: "الهاتف",
+  contactCity: "المدينة",
+  contactSoon: "بيانات التواصل تُضاف قريبًا",
+  rights: "جميع الحقوق محفوظة",
+  statsHeading: "أرقام النادي",
+  tracking: {
+    caption:
+      "نموذج توضيحي لجدول تتبّع برنامج الحفظ: أسابيع الدورة ثم الاختبار، الأخضر إتقان والأحمر لم يُتقن بعد",
+    cellG: "أتقنَ الحفظ",
+    cellR: "لم يُتقن بعد",
+  },
+
+  // ── الدخول والتسجيل (المرحلة ٢) ──
+  auth: {
+    brand: "نادي الجيل الصاعد",
+
+    // الحقول المشتركة
+    fullNameLabel: "الاسم الكامل",
+    fullNamePlaceholder: "الاسم كما تحب أن يظهر",
+    phoneLabel: "رقم الهاتف",
+    phonePlaceholder: "06 أو 07 …",
+    cityLabel: "المدينة",
+    cityPlaceholder: "مدينتك",
+    emailLabel: "البريد الإلكتروني",
+    emailPlaceholder: "أدخل بريدك الإلكتروني",
+    passwordLabel: "كلمة المرور",
+    passwordPlaceholder: "٨ أحرف على الأقل",
+    confirmLabel: "تأكيد كلمة المرور",
+    confirmPlaceholder: "أعد كتابة كلمة المرور",
+    sessionDayLabel: "يوم الاستظهار",
+    sessionDayHint: "اليوم الذي تُسمّع فيه حفظك أسبوعيًا",
+    weeklyAmountLabel: "مقدار الحفظ الأسبوعي",
+    choosePlaceholder: "اختر…",
+
+    // التسجيل
+    registerTitle: "إنشاء حساب",
+    registerSubtitle: "انضمّ إلى ركب الحفظة",
+    pathQuestion: "كيف تريد الانضمام؟",
+    pathClubTitle: "الانضمام للنادي",
+    pathClubHint: "برنامج الحفظ + الأنشطة الدعوية للنادي",
+    pathHifzTitle: "برنامج الحفظ فقط",
+    pathHifzHint: "الاستظهار الأسبوعي لكتاب الله",
+    registerSubmit: "إنشاء الحساب",
+    registerSubmitting: "جارٍ الإنشاء…",
+    checkEmail:
+      "أنشأنا حسابك — تحقّق من بريدك الإلكتروني لتأكيده، ثم سجّل الدخول.",
+    haveAccount: "لديك حساب بالفعل؟",
+    goLogin: "سجّل الدخول",
+
+    // الدخول
+    loginTitle: "تسجيل الدخول",
+    loginSubtitle: "أهلًا بعودتك",
+    loginSubmit: "دخول",
+    loginSubmitting: "جارٍ الدخول…",
+    forgotLink: "نسيت كلمة المرور؟",
+    noAccount: "ليس لديك حساب؟",
+    goRegister: "أنشئ حسابًا",
+
+    // استعادة كلمة المرور
+    forgotTitle: "استعادة كلمة المرور",
+    forgotSubtitle: "سنرسل إليك رابطًا لإعادة التعيين",
+    forgotSubmit: "أرسل رابط الاستعادة",
+    forgotSubmitting: "جارٍ الإرسال…",
+    forgotSent:
+      "إن كان هذا البريد مسجّلًا لدينا، فستصلك رسالة فيها رابط لإعادة تعيين كلمة المرور.",
+    backToLogin: "العودة إلى الدخول",
+
+    // كلمة مرور جديدة
+    resetTitle: "كلمة مرور جديدة",
+    resetSubtitle: "اختر كلمة مرور جديدة لحسابك",
+    resetSubmit: "تحديث كلمة المرور",
+    resetSubmitting: "جارٍ التحديث…",
+    resetDone: "تم تحديث كلمة المرور بنجاح.",
+
+    // في انتظار الموافقة
+    pendingTitle: "حسابك قيد المراجعة",
+    pendingBody:
+      "تم استلام طلب انضمامك. سيطّلع عليه المشرف قريبًا، وستصلك رسالة فور قبول العضوية.",
+    pendingHint: "لا حاجة لإعادة التسجيل — يكفي الانتظار.",
+    signOut: "تسجيل الخروج",
+
+    // لوحة مؤقتة (تُبنى في المرحلة ٣)
+    dashboardStubTitle: "أهلًا بك",
+    dashboardStubBody:
+      "لوحة العضو قيد الإنشاء — ستظهر هنا متابعة حفظك قريبًا بإذن الله.",
+
+    // رسائل الأخطاء — بصوت الواجهة، واضحة، دون اعتذار
+    errRequired: "هذا الحقل مطلوب",
+    errEmail: "أدخل بريدًا إلكترونيًا صحيحًا",
+    errPasswordShort: "كلمة المرور ٨ أحرف على الأقل",
+    errPasswordMismatch: "كلمتا المرور غير متطابقتين",
+    errChooseDay: "اختر يوم الاستظهار",
+    errChooseAmount: "اختر مقدار الحفظ",
+    errEmailTaken: "هذا البريد مسجّل من قبل — جرّب تسجيل الدخول",
+    errCredentials: "البريد أو كلمة المرور غير صحيحة",
+    errGeneric: "تعذّر إتمام العملية، حاول مرة أخرى",
+    errLinkExpired:
+      "انتهت صلاحية الرابط أو أنه غير صالح — اطلب رابطًا جديدًا",
+  },
+
+  // ── لوحة العضو (المرحلة ٣) ──
+  dashboard: {
+    greeting: "مرحباً",
+    navOverview: "المتابعة",
+    navProfile: "ملفي",
+    signOut: "تسجيل الخروج",
+
+    positionTitle: "موضعك في الحفظ",
+    positionAt: "تقف عند",
+    positionNone: "لم تبدأ بعد — سيظهر تقدّمك هنا بعد أوّل تسميع بإذن الله",
+    juzLabel: "الأجزاء المحفوظة",
+    pagesLabel: "الصفحات",
+    surahWord: "سورة",
+    ayahWord: "آية",
+
+    gridTitle: "جدول تتبّع الحفظ",
+    gridSubtitle: "دورتك الحالية — كل خلية تمثّل أسبوعًا، اضغط عليها لتفاصيل الحصة",
+    weekWord: "الأسبوع",
+    examCell: "أسبوع الاختبار",
+    noCycle: "لا توجد دورة نشطة بعد — ستبدأ قريبًا بإذن الله",
+    stGreen: "أتقن",
+    stRed: "لم يُتقن",
+    stAbsent: "غاب",
+    stExcused: "بعذر",
+    stPending: "لم يحن",
+
+    detailStatus: "التقييم",
+    detailRange: "المقدار",
+    detailHizb: "الحزب",
+    detailMistakes: "عدد الأخطاء",
+    detailNotes: "ملاحظة المشرف",
+    detailDate: "تاريخ الحصة",
+    detailNone: "لم تُسجَّل هذه الحصة بعد",
+    detailClose: "إغلاق",
+
+    examTitle: "الاختبار القادم",
+    examNone: "لا اختبار مقرَّر حاليًا",
+    examRemaining: "باقٍ",
+    examDays: "يومًا",
+    examToday: "الاختبار اليوم",
+    examPortion: "المقرَّر",
+    examLocation: "المكان",
+
+    annTitle: "الإعلانات",
+    annNone: "لا إعلانات حاليًا",
+
+    profileTitle: "ملفي الشخصي",
+    profileSubtitle: "بيانات حسابك وتفضيلات الاستظهار",
+    profileSave: "حفظ التغييرات",
+    profileSaving: "جارٍ الحفظ…",
+    profileSaved: "تم حفظ التغييرات بنجاح",
+    backToDashboard: "العودة إلى اللوحة",
+  },
+
+  // ── الإدارة (المرحلة ٤) ──
+  manage: {
+    title: "الإدارة",
+    hubSubtitle: "إدارة الأعضاء والحلقات ومتابعة الحفظ والمحتوى",
+    navHub: "الرئيسية",
+    navRecord: "تسجيل الاستظهار",
+    navMembers: "الأعضاء",
+    navHalaqat: "الحلقات",
+    navExams: "الاختبارات",
+    navContent: "الإعلانات والتذكيرات",
+    toDashboard: "لوحتي",
+    signOut: "تسجيل الخروج",
+
+    statMembers: "عضو",
+    statPending: "بانتظار الموافقة",
+    statHalaqat: "حلقة",
+    open: "فتح",
+
+    recordTitle: "تسجيل الاستظهار",
+    recordSubtitle: "سجّل حصّة الأسبوع لعضو — تظهر فورًا في جدوله",
+    recordMember: "العضو",
+    recordWeek: "الأسبوع",
+    recordStatus: "التقييم",
+    recordFromSurah: "من سورة",
+    recordFromAyah: "من آية",
+    recordToSurah: "إلى سورة",
+    recordToAyah: "إلى آية",
+    recordHizb: "الحزب",
+    recordMistakes: "عدد الأخطاء",
+    recordNotes: "ملاحظة",
+    recordSave: "حفظ الحصة",
+    recordSaving: "جارٍ الحفظ…",
+    recordSaved: "تم حفظ الحصة بنجاح",
+    chooseMember: "اختر عضوًا…",
+    dash: "—",
+    noCycle: "لا توجد دورة نشطة — أنشئ دورة أولًا",
+    noMembers: "لا أعضاء نشطون بعد",
+
+    membersTitle: "الأعضاء",
+    pendingTitle: "طلبات الانضمام",
+    pendingNone: "لا طلبات جديدة",
+    activeTitle: "الأعضاء النشطون",
+    approve: "قبول العضوية",
+    approving: "جارٍ…",
+    approved: "تم قبول العضوية",
+    colName: "الاسم",
+    colContact: "التواصل",
+    colDay: "اليوم",
+    colAmount: "المقدار",
+    colRole: "الدور",
+    colMembership: "العضوية",
+    roleAdmin: "مدير",
+    roleSupervisor: "مشرف",
+    roleMember: "عضو",
+    mClub: "النادي",
+    mHifz: "الحفظ",
+
+    halaqatTitle: "الحلقات",
+    halaqatSubtitle: "الحلقة = مشرف وطلبته",
+    halaqaName: "اسم الحلقة",
+    halaqaSupervisor: "المشرف",
+    halaqaScheduleNote: "ملاحظة الجدول",
+    halaqaCapacity: "السعة",
+    halaqaCreate: "إنشاء الحلقة",
+    halaqaCreating: "جارٍ…",
+    halaqaCreated: "تم إنشاء الحلقة",
+    halaqatNone: "لا حلقات بعد",
+    chooseSupervisor: "بدون مشرف",
+
+    examsTitle: "الاختبارات",
+    examName: "عنوان الاختبار",
+    examScope: "النطاق",
+    scopeAll: "الجميع",
+    scopeHalaqa: "حلقة",
+    scopeMember: "عضو",
+    examDate: "التاريخ",
+    examTime: "الوقت",
+    examPlace: "المكان",
+    examCreate: "إنشاء الاختبار",
+    examCreating: "جارٍ…",
+    examCreated: "تم إنشاء الاختبار",
+    examsNone: "لا اختبارات",
+
+    contentTitle: "الإعلانات والتذكيرات",
+    tabAds: "إعلان",
+    tabReminders: "تذكير",
+    cTitle: "العنوان",
+    cBody: "النص",
+    cImage: "صورة (اختياري)",
+    cAudience: "الجمهور",
+    audBoth: "الجميع",
+    audHifz: "أعضاء الحفظ",
+    audClub: "أعضاء النادي",
+    cPublish: "نشر",
+    cPublishing: "جارٍ النشر…",
+    adPublished: "تم نشر الإعلان",
+    reminderPublished: "تم نشر التذكير",
+    uploading: "جارٍ رفع الصورة…",
+    imageTooBig: "الصورة كبيرة جدًا (الحد ٥ ميغابايت)",
+    removeImage: "إزالة الصورة",
+    remindersHeading: "تذكيرات",
+  },
+
+  // أيام الأسبوع (0=الأحد) — لاختيار يوم الاستظهار
+  weekdays: ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"],
+
+  // مقدار الحفظ بأثمان الحزب — القيمة المخزَّنة 1..8
+  hifzAmounts: [
+    { value: 1, label: "ثُمن" },
+    { value: 2, label: "رُبع" },
+    { value: 3, label: "ثلاثة أثمان" },
+    { value: 4, label: "نصف حزب" },
+    { value: 5, label: "خمسة أثمان" },
+    { value: 6, label: "ثلاثة أرباع" },
+    { value: 7, label: "سبعة أثمان" },
+    { value: 8, label: "حزب كامل" },
+  ],
+} as const;
+
+/** ٠١٢٣٤٥٦٧٨٩ — تحويل الأرقام إلى الهندية العربية */
+export const arabicDigits = (n: number): string =>
+  String(n).replace(/\d/g, (d) => "٠١٢٣٤٥٦٧٨٩"[+d]);
