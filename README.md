@@ -9,6 +9,8 @@
 An Arabic (RTL) web platform for a Da'wah club and a Qur'an‑memorization
 program — weekly ḥifẓ tracking, study circles (ḥalaqāt), exams and announcements.
 
+### 🌐 الموقع المباشر · Live site → **[club-jil-saad.vercel.app](https://club-jil-saad.vercel.app)**
+
 </div>
 
 ---
