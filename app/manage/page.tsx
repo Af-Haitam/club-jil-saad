@@ -7,12 +7,17 @@ import {
   getActiveCycle,
   getEnrollments,
   getProgress,
+  getCycleSessions,
 } from "@/lib/manage/queries";
 import { approveMember, rejectMember } from "./actions";
-import RecordForm from "@/components/manage/RecordForm";
+import TrackingSheet from "@/components/manage/TrackingSheet";
 import HalaqaForm from "@/components/manage/HalaqaForm";
 import HalaqaEditForm from "@/components/manage/HalaqaEditForm";
 import MemberForm from "@/components/manage/MemberForm";
+import SheetSyncButton from "@/components/manage/SheetSyncButton";
+import SiteEditor from "@/components/manage/SiteEditor";
+import { sheetConfig } from "@/lib/manage/google-sheet";
+import { getAllSections, sectionsAreSeeded } from "@/lib/site/queries";
 import ExamForm from "@/components/manage/ExamForm";
 import ContentForm from "@/components/manage/ContentForm";
 import { strings } from "@/lib/strings";
@@ -29,6 +34,7 @@ const sectionNav = [
   { id: "halaqat", n: "03", label: m.navHalaqat },
   { id: "exams", n: "04", label: m.navExams },
   { id: "content", n: "05", label: m.navContent },
+  { id: "site", n: "06", label: m.navSite },
 ];
 
 const roleLabel: Record<UserRole, string> = { admin: m.roleAdmin, supervisor: m.roleSupervisor, member: m.roleMember };
@@ -46,6 +52,15 @@ export default async function ManagePage() {
   // القوقعة تُعيد غير الطاقم قبل الوصول إلى هنا؛ هذا للتحقق من النوع فقط.
   if (!me) return null;
   const isAdmin = me.role === "admin";
+  const sheet = sheetConfig();
+
+  // تابع للدورة، فلا يمكن ضمّه إلى الدفعة الأولى.
+  const sessions = cycle ? await getCycleSessions(cycle.id) : [];
+
+  // محرّر الصفحة الرئيسية — للمدير وحده، فلا نُتعب القاعدة به مع كل مشرف.
+  const [siteSections, seeded] = isAdmin
+    ? await Promise.all([getAllSections(), sectionsAreSeeded()])
+    : [[], false];
 
   const pending = members.filter((x) => x.status === "pending");
   const active = members.filter((x) => x.status === "active");
@@ -102,14 +117,14 @@ export default async function ManagePage() {
         </nav>
       </section>
 
-      {/* ── 01 · تسجيل الاستظهار ── */}
+      {/* ── 01 · تسجيل الاستظهار — جدول التتبع التفاعلي ── */}
       <ManageSection id="record" n="01" title={m.navRecord} desc={m.recordSubtitle}>
         {!cycle ? (
           <Empty>{m.noCycle}</Empty>
         ) : active.length === 0 ? (
           <Empty>{m.noMembers}</Empty>
         ) : (
-          <RecordForm members={supervisorOpts} weekCount={cycle.week_count} />
+          <TrackingSheet members={active} sessions={sessions} weekCount={cycle.week_count} />
         )}
       </ManageSection>
 
@@ -119,15 +134,11 @@ export default async function ManagePage() {
         n="02"
         title={m.navMembers}
         action={
-          isAdmin && members.length > 0 ? (
-            <a
-              href="/manage/export"
-              download
-              className="rounded-sm border border-gold/60 px-4 py-2 text-sm text-gold transition-colors hover:bg-gold hover:text-ink"
-            >
-              {m.exportXlsx}
-            </a>
-          ) : null
+          !isAdmin ? null : sheet.configured ? (
+            <SheetSyncButton sheetUrl={sheet.url} />
+          ) : (
+            <p className="text-xs text-parchment/45">{m.sheetUnconfigured}</p>
+          )
         }
       >
         <div className="flex flex-col gap-9">
@@ -244,6 +255,13 @@ export default async function ManagePage() {
       <ManageSection id="content" n="05" title={m.navContent}>
         <ContentForm />
       </ManageSection>
+
+      {/* ── 06 · محرّر الصفحة الرئيسية (للمدير وحده) ── */}
+      {isAdmin && (
+        <ManageSection id="site" n="06" title={m.navSite} desc={m.siteSubtitle}>
+          <SiteEditor sections={siteSections} seeded={seeded} />
+        </ManageSection>
+      )}
     </div>
   );
 }

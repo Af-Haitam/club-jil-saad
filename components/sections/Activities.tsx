@@ -2,10 +2,10 @@ import Reveal from "@/components/Reveal";
 import SectionHead from "@/components/SectionHead";
 import GeoPattern from "@/components/GeoPattern";
 import { activities } from "@/lib/site-content";
+import type { ActivitiesContent } from "@/lib/site-content";
 
-const c = activities.content;
 
-export default function Activities() {
+export default function Activities({ content: c = activities.content }: { content?: ActivitiesContent }) {
   return (
     <section
       id="activities"

@@ -21,7 +21,7 @@ program — weekly ḥifẓ tracking, study circles (ḥalaqāt), exams and anno
 - 🔐 **التسجيل والدخول** — بريد وكلمة مرور، مسار الحفظ أو النادي.
 - 📊 **لوحة العضو** — جدول تتبّع أسبوعي بالألوان، الموضع في الحفظ، الاختبار القادم، الإعلانات.
 - 🛠️ **الإدارة** — تسجيل الاستظهار، قبول الأعضاء، الحلقات، الاختبارات، الإعلانات والتذكيرات مع الصور.
-- 👥 **إدارة الأشخاص** — الأدوار، توزيع الأعضاء على الحلقات، تعديل التقدم، وتصدير القائمة إلى Excel.
+- 👥 **إدارة الأشخاص** — الأدوار، توزيع الأعضاء على الحلقات، تعديل التقدم، ودفع القائمة إلى **جدول Google** مباشرةً.
 
 ## 🧱 التقنيات · Tech stack
 
@@ -61,6 +61,17 @@ NEXT_PUBLIC_SUPABASE_URL=https://YOUR-PROJECT.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-public-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
+```
+
+اختياري — لتفعيل زرّ «تحديث جدول Google» في صفحة الإدارة، اتبع الدليل (بالإنجليزية)
+في [docs/google-sheet.md](docs/google-sheet.md):
+Optional — to enable the Google Sheets sync button, follow
+[docs/google-sheet.md](docs/google-sheet.md):
+
+```bash
+GOOGLE_SHEET_WEBHOOK_URL=https://script.google.com/macros/s/XXXX/exec
+GOOGLE_SHEET_TOKEN=your-shared-secret
+GOOGLE_SHEET_URL=https://docs.google.com/spreadsheets/d/XXXX/edit
 ```
 
 > ⚠️ **لا ترفع `.env.local` أبدًا** — يحتوي مفاتيح سرّية، وهو مستثنى في `.gitignore`.

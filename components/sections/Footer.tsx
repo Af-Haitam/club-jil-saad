@@ -1,10 +1,10 @@
 import Image from "next/image";
 import { footer, navLinks } from "@/lib/site-content";
+import type { FooterContent } from "@/lib/site-content";
 import { strings } from "@/lib/strings";
 
-const c = footer.content;
 
-export default function Footer() {
+export default function Footer({ content: c = footer.content }: { content?: FooterContent }) {
   // لا تُعرض بيانات تواصل ناقصة على صفحة عامة — تُخفى حتى تصل الحقيقية
   const hasContact = Object.values(c.contact).some((v) => v && v !== "—");
 

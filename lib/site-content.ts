@@ -224,6 +224,22 @@ export const footer = {
 
 /* ------------------------------------------------------------------ */
 
+/* أنواع محتوى كل قسم — مشتقّة من القيم أعلاه، فلا تفترق عنها أبدًا.
+   الأقسام تستقبلها كخاصية (prop) منذ المرحلة 6، ومصدرها إمّا قاعدة
+   البيانات أو هذا الملف نفسه حين تكون القاعدة فارغة أو نائمة. */
+export type HeroContent = typeof hero.content;
+export type AboutContent = typeof about.content;
+export type HifzContent = typeof hifz.content;
+export type ParticipationContent = typeof participation.content;
+export type TrackingContent = typeof tracking.content;
+export type ActivitiesContent = typeof activities.content;
+export type StatsContent = typeof stats.content;
+export type CtaContent = typeof cta.content;
+export type FooterContent = typeof footer.content;
+
+/** الأقسام التسعة بترتيبها — مصدر النسخة الاحتياطية ومصدر بذرة قاعدة البيانات. */
+export const allSections = [hero, about, hifz, participation, tracking, activities, stats, cta, footer];
+
 export const navLinks = [
   { label: "الرئيسية", href: "#hero" },
   { label: "عن النادي", href: "#about" },

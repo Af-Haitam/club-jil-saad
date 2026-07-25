@@ -2,10 +2,10 @@ import Reveal from "@/components/Reveal";
 import SectionHead from "@/components/SectionHead";
 import TrackingGrid from "@/components/TrackingGrid";
 import { tracking } from "@/lib/site-content";
+import type { TrackingContent } from "@/lib/site-content";
 
-const c = tracking.content;
 
-export default function Tracking() {
+export default function Tracking({ content: c = tracking.content }: { content?: TrackingContent }) {
   return (
     <section id="tracking" className="relative bg-parchment-deep py-24 text-navy">
       <div className="relative mx-auto max-w-5xl px-5">

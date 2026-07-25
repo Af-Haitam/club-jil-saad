@@ -1,10 +1,10 @@
 import Reveal from "@/components/Reveal";
 import GeoPattern from "@/components/GeoPattern";
 import { cta } from "@/lib/site-content";
+import type { CtaContent } from "@/lib/site-content";
 
-const c = cta.content;
 
-export default function JoinCta() {
+export default function JoinCta({ content: c = cta.content }: { content?: CtaContent }) {
   return (
     <section
       id="join"

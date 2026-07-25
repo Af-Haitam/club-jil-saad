@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import Navbar from "@/components/Navbar";
 import MotionProvider from "@/components/MotionProvider";
 import Hero from "@/components/sections/Hero";
@@ -9,34 +10,69 @@ import Activities from "@/components/sections/Activities";
 import Stats from "@/components/sections/Stats";
 import JoinCta from "@/components/sections/JoinCta";
 import Footer from "@/components/sections/Footer";
-import * as content from "@/lib/site-content";
+import { getSections, type SiteSectionRow } from "@/lib/site/queries";
+import type {
+  HeroContent,
+  AboutContent,
+  HifzContent,
+  ParticipationContent,
+  TrackingContent,
+  ActivitiesContent,
+  StatsContent,
+  CtaContent,
+  FooterContent,
+} from "@/lib/site-content";
 
-// ترتيب الأقسام يأتي من site-content — نفس بنية site_sections في قاعدة
-// البيانات مستقبلًا، فيصبح تفعيل محرر المدير في المرحلة 6 نقل بيانات فقط.
-const sections = [
-  { data: content.hero, Component: Hero },
-  { data: content.about, Component: About },
-  { data: content.hifz, Component: HifzProgram },
-  { data: content.participation, Component: Participation },
-  { data: content.tracking, Component: Tracking },
-  { data: content.activities, Component: Activities },
-  { data: content.stats, Component: Stats },
-  { data: content.cta, Component: JoinCta },
-]
-  .filter((s) => s.data.visible)
-  .sort((a, b) => a.data.order - b.data.order);
+// الترتيب والظهور والمحتوى تأتي كلها من site_sections عبر getSections،
+// وتسقط إلى lib/site-content.ts إن كان الجدول فارغًا أو المشروع نائمًا.
 
-export default function Home() {
+// تبقى الصفحة ثابتة (getSections بلا كوكيز)، وتُجدَّد كل ساعة احتياطًا.
+// الحفظ في المحرّر يستدعي revalidatePath("/") فيظهر التعديل فورًا لا بعد ساعة.
+export const revalidate = 3600;
+
+/** لكل نوع مكوّنه. التحويل صريح هنا لأنّ القاعدة تُعيد jsonb بلا نوع. */
+function renderSection(s: SiteSectionRow) {
+  switch (s.type) {
+    case "hero":
+      return <Hero content={s.content as HeroContent} />;
+    case "about":
+      return <About content={s.content as AboutContent} />;
+    case "hifz":
+      return <HifzProgram content={s.content as HifzContent} />;
+    case "participation":
+      return <Participation content={s.content as ParticipationContent} />;
+    case "tracking":
+      return <Tracking content={s.content as TrackingContent} />;
+    case "activities":
+      return <Activities content={s.content as ActivitiesContent} />;
+    case "stats":
+      return <Stats content={s.content as StatsContent} />;
+    case "cta":
+      return <JoinCta content={s.content as CtaContent} />;
+    default:
+      return null; // التذييل يُرسم خارج <main>، وأي نوع مجهول يُتجاهل بصمت
+  }
+}
+
+export default async function Home() {
+  const sections = await getSections();
+
+  // RLS يخفي غير المرئي عن الزائر، لكن المدير يرى كل شيء — فنُرشّح هنا أيضًا.
+  const visible = sections.filter((s) => s.is_visible).sort((a, b) => a.order_index - b.order_index);
+  const footer = visible.find((s) => s.type === "footer");
+
   return (
     <MotionProvider>
       <Navbar />
       {/* الخيط الذهبي يُرسم داخل كل قسم فوق خلفيته — لا كطبقة عامة تُطمس */}
       <main id="main" className="relative">
-        {sections.map(({ data, Component }) => (
-          <Component key={data.type} />
-        ))}
+        {visible
+          .filter((s) => s.type !== "footer")
+          .map((s) => (
+            <Fragment key={s.type}>{renderSection(s)}</Fragment>
+          ))}
       </main>
-      {content.footer.visible && <Footer />}
+      {footer && <Footer content={footer.content as FooterContent} />}
     </MotionProvider>
   );
 }

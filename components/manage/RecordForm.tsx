@@ -13,7 +13,18 @@ import type { ActionState } from "@/lib/validation/auth";
 type MemberOpt = { id: string; full_name: string };
 const initialState: ActionState = {};
 
-export default function RecordForm({ members, weekCount }: { members: MemberOpt[]; weekCount: number }) {
+export default function RecordForm({
+  members,
+  weekCount,
+  defaultMemberId = "",
+  defaultWeek = 1,
+}: {
+  members: MemberOpt[];
+  weekCount: number;
+  /** يُملأان من جدول التتبع حين يُضغط «تفاصيل» على خانة بعينها. */
+  defaultMemberId?: string;
+  defaultWeek?: number;
+}) {
   const [state, action] = useActionState(recordAction, initialState);
   const m = strings.manage;
   const d = strings.dashboard;
@@ -35,7 +46,14 @@ export default function RecordForm({ members, weekCount }: { members: MemberOpt[
           </p>
         )}
 
-        <SelectField id="member_id" name="member_id" label={m.recordMember} defaultValue="" required error={state.fieldErrors?.member_id}>
+        <SelectField
+          id="member_id"
+          name="member_id"
+          label={m.recordMember}
+          defaultValue={defaultMemberId}
+          required
+          error={state.fieldErrors?.member_id}
+        >
           <option value="" disabled>
             {m.chooseMember}
           </option>
@@ -47,7 +65,14 @@ export default function RecordForm({ members, weekCount }: { members: MemberOpt[
         </SelectField>
 
         <div className="grid gap-5 sm:grid-cols-2">
-          <SelectField id="week_number" name="week_number" label={m.recordWeek} defaultValue="1" required error={state.fieldErrors?.week_number}>
+          <SelectField
+            id="week_number"
+            name="week_number"
+            label={m.recordWeek}
+            defaultValue={String(defaultWeek)}
+            required
+            error={state.fieldErrors?.week_number}
+          >
             {Array.from({ length: weekCount }, (_, i) => i + 1).map((w) => (
               <option key={w} value={w}>
                 {d.weekWord} {w}

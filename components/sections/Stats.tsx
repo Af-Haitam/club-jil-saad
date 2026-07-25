@@ -1,10 +1,10 @@
 import Reveal from "@/components/Reveal";
 import { stats } from "@/lib/site-content";
+import type { StatsContent } from "@/lib/site-content";
 import { strings } from "@/lib/strings";
 
-const c = stats.content;
 
-export default function Stats() {
+export default function Stats({ content: c = stats.content }: { content?: StatsContent }) {
   return (
     <section
       id="stats"

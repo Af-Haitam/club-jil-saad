@@ -4,9 +4,9 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import GeoPattern from "@/components/GeoPattern";
 import { hero } from "@/lib/site-content";
+import type { HeroContent } from "@/lib/site-content";
 import { strings } from "@/lib/strings";
 
-const c = hero.content;
 
 const anim = (delay: number) => ({
   initial: { opacity: 0, y: 26 },
@@ -14,7 +14,7 @@ const anim = (delay: number) => ({
   transition: { duration: 0.9, delay, ease: [0.22, 1, 0.36, 1] as const },
 });
 
-export default function Hero() {
+export default function Hero({ content: c = hero.content }: { content?: HeroContent }) {
   return (
     <section
       id="hero"

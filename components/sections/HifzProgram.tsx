@@ -2,10 +2,10 @@ import Reveal from "@/components/Reveal";
 import SectionHead from "@/components/SectionHead";
 import GeoPattern from "@/components/GeoPattern";
 import { hifz } from "@/lib/site-content";
+import type { HifzContent } from "@/lib/site-content";
 
-const c = hifz.content;
 
-export default function HifzProgram() {
+export default function HifzProgram({ content: c = hifz.content }: { content?: HifzContent }) {
   return (
     <section
       id="hifz"

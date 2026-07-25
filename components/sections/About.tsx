@@ -1,10 +1,10 @@
 import Reveal from "@/components/Reveal";
 import SectionHead from "@/components/SectionHead";
 import { about } from "@/lib/site-content";
+import type { AboutContent } from "@/lib/site-content";
 
-const c = about.content;
 
-export default function About() {
+export default function About({ content: c = about.content }: { content?: AboutContent }) {
   return (
     <section id="about" className="relative bg-parchment py-24 text-navy">
       <div className="relative mx-auto max-w-4xl px-5">

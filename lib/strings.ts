@@ -188,6 +188,15 @@ export const strings = {
     statHalaqat: "حلقة",
     open: "فتح",
 
+    // جدول التتبع التفاعلي — نفس شكل الورقة، لكن الخانة تُضغط فتُلوَّن
+    gridPick: "اختر التقييم",
+    gridDetails: "تفاصيل (سورة، آية، أخطاء)",
+    gridClose: "إغلاق",
+    gridSaveFailed: "تعذّر الحفظ — أعد المحاولة",
+    colExam: "الاختبار",
+    colWeekShort: "أ",
+    examSoon: "قريبًا",
+
     recordTitle: "تسجيل الاستظهار",
     recordSubtitle: "سجّل حصّة الأسبوع لعضو — تظهر فورًا في جدوله",
     recordMember: "العضو",
@@ -277,8 +286,16 @@ export const strings = {
     memberRejected: "تم رفض الطلب",
     suspendedGroup: "الموقوفون",
     editMember: "تعديل",
-    exportXlsx: "تصدير إلى Excel",
+    colEmail: "البريد",
     colHalaqa: "الحلقة",
+
+    // جدول Google — قائمة الأعضاء أونلاين بدل ملف يُنزَّل ويقدُم
+    sheetSync: "تحديث جدول Google",
+    sheetSyncing: "جارٍ التحديث…",
+    sheetSynced: "تم تحديث الجدول",
+    sheetOpen: "فتح الجدول",
+    sheetUnconfigured: "جدول Google غير مُهيّأ بعد",
+    errSheet: "تعذّر الاتصال بجدول Google — تحقّق من الرابط ثم أعد المحاولة",
     noHalaqa: "بدون حلقة",
     fRole: "الدور",
     fStatus: "الحالة",
@@ -304,6 +321,29 @@ export const strings = {
     errSelfRole: "لا يمكنك تغيير دورك أو حالتك بنفسك",
     errAdminOnly: "هذا الإجراء للمدير فقط",
 
+    // ── المرحلة ٦: محرّر الصفحة الرئيسية ──
+    navSite: "الصفحة الرئيسية",
+    siteSubtitle: "عدّل نصوص الصفحة العامة وصورها وترتيبها",
+    siteSeed: "استيراد المحتوى الحالي",
+    siteSeeding: "جارٍ الاستيراد…",
+    siteSeeded: "تم استيراد المحتوى — صار التعديل ممكنًا",
+    siteNotSeeded: "المحتوى ما زال مكتوبًا في الشيفرة. استورده مرّة واحدة لتتمكّن من تعديله من هنا.",
+    siteSave: "حفظ القسم",
+    siteSaving: "جارٍ الحفظ…",
+    siteSaved: "تم الحفظ — الصفحة الرئيسية محدَّثة",
+    siteShow: "إظهار",
+    siteHide: "إخفاء",
+    siteHidden: "مخفي",
+    siteUp: "تقديم",
+    siteDown: "تأخير",
+    siteEdit: "تعديل",
+    siteAddItem: "إضافة عنصر",
+    siteRemoveItem: "حذف العنصر",
+    siteFieldLocked: "حقل مركّب — يُعدَّل من الشيفرة",
+    siteOpenHome: "معاينة الصفحة",
+    siteImageChoose: "اختر صورة",
+    siteImageCurrent: "الصورة الحالية",
+
     halaqaEdit: "تعديل الحلقة",
     halaqaSave: "حفظ الحلقة",
     halaqaSaving: "جارٍ الحفظ…",
@@ -313,8 +353,65 @@ export const strings = {
     halaqaCount: "طالب",
   },
 
+  // أسماء أقسام الصفحة الرئيسية في محرّر الإدارة
+  sectionTypes: {
+    hero: "الواجهة",
+    about: "عن النادي",
+    hifz: "برنامج الحفظ",
+    participation: "طريقة المشاركة",
+    tracking: "جدول التتبّع",
+    activities: "الأنشطة",
+    stats: "أرقام النادي",
+    cta: "دعوة الانضمام",
+    footer: "التذييل",
+  } as Record<string, string>,
+
+  // تسميات عربية لمفاتيح المحتوى — المفاتيح إنجليزية في الشيفرة، ولا يظهر
+  // منها شيء للمستخدم (القاعدة ١: لا نصّ إنجليزي في الواجهة).
+  fieldLabels: {
+    logo: "الشعار",
+    name: "الاسم",
+    tagline: "العبارة",
+    lead: "المقدّمة",
+    scrollCue: "دعوة التمرير",
+    eyebrow: "العنوان العلوي",
+    title: "العنوان",
+    body: "الفقرات",
+    pillars: "الركائز",
+    text: "النص",
+    paragraphs: "الفقرات",
+    official: "النص الرسمي",
+    steps: "الخطوات",
+    intro: "التمهيد",
+    columns: "أعمدة الجدول",
+    weeks: "عدد الأسابيع",
+    rows: "صفوف الجدول",
+    legend: "دليل الألوان",
+    note: "ملاحظة",
+    items: "العناصر",
+    value: "القيمة",
+    label: "التسمية",
+    primary: "الزر الرئيسي",
+    secondary: "الزر الثانوي",
+    href: "الرابط",
+    contact: "بيانات التواصل",
+    email: "البريد",
+    phone: "الهاتف",
+    city: "المدينة",
+    hijriYear: "السنة الهجرية",
+    gregYear: "السنة الميلادية",
+    key: "الرمز",
+    amount: "المقدار",
+    exam: "الاختبار",
+    weekPrefix: "بادئة الأسبوع",
+    cells: "الخانات",
+  } as Record<string, string>,
+
   // أيام الأسبوع (0=الأحد) — لاختيار يوم الاستظهار
   weekdays: ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"],
+
+  // اختصارات اليوم كما في ورقة التتبع الورقية — عمود ضيّق في الجدول
+  weekdaysShort: ["أح", "اث", "ث", "أر", "خ", "ج", "س"],
 
   // مقدار الحفظ بأثمان الحزب — القيمة المخزَّنة 1..8
   hifzAmounts: [

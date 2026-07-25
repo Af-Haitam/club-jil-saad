@@ -1,6 +1,13 @@
 // طبقة قراءة منطقة الإدارة — للمدير/المشرف. RLS يقصر المشرف على طلبته.
 import { createClient } from "@/lib/supabase/server";
-import type { Profile, ProgramCycle, Halaqa, Enrollment, HifzProgress } from "@/lib/types/database";
+import type {
+  Profile,
+  ProgramCycle,
+  Halaqa,
+  Enrollment,
+  HifzProgress,
+  WeeklySession,
+} from "@/lib/types/database";
 
 /** الملف الشخصي للمستخدم إن كان مديرًا أو مشرفًا، وإلا null (لبوّابة /manage). */
 export async function getStaffProfile(): Promise<Profile | null> {
@@ -15,11 +22,7 @@ export async function getStaffProfile(): Promise<Profile | null> {
   return me;
 }
 
-/**
- * الملف الشخصي للمستخدم إن كان مديرًا، وإلا null.
- * إجراءات المرحلة ٥ (الأدوار، الحالة، الحلقات) للمدير وحده — و`route.ts`
- * لا يمرّ بـ layout.tsx إطلاقًا، فلا بوّابة له غير هذه.
- */
+/** الملف الشخصي للمستخدم إن كان مديرًا، وإلا null. إجراءات المرحلة ٥ للمدير وحده. */
 export async function getAdminProfile(): Promise<Profile | null> {
   const me = await getStaffProfile();
   return me && me.role === "admin" ? me : null;
@@ -59,6 +62,13 @@ export async function getEnrollments(): Promise<Enrollment[]> {
   const supabase = await createClient();
   const { data } = await supabase.from("enrollments").select("*").eq("active", true);
   return (data ?? []) as Enrollment[];
+}
+
+/** كل حصص الدورة الحالية — تملأ جدول التتبع (RLS يقصر المشرف على طلبته). */
+export async function getCycleSessions(cycleId: string): Promise<WeeklySession[]> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("weekly_sessions").select("*").eq("cycle_id", cycleId);
+  return (data ?? []) as WeeklySession[];
 }
 
 /** تقدّم الحفظ لكل عضو ظاهر (RLS يقصر المشرف على طلبته). */

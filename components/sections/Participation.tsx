@@ -1,11 +1,11 @@
 import Reveal from "@/components/Reveal";
 import SectionHead from "@/components/SectionHead";
 import { participation } from "@/lib/site-content";
+import type { ParticipationContent } from "@/lib/site-content";
 import { arabicDigits } from "@/lib/strings";
 
-const c = participation.content;
 
-export default function Participation() {
+export default function Participation({ content: c = participation.content }: { content?: ParticipationContent }) {
   return (
     <section id="participation" className="relative bg-parchment py-24 text-navy">
       <div className="relative mx-auto max-w-4xl px-5">

@@ -3,7 +3,10 @@
 // كل إجراءات منطقة الإدارة في مكان واحد — تُستورد من الصفحة الواحدة ومن نماذجها.
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { getAdminProfile } from "@/lib/manage/queries";
+import { getAdminProfile, getStaffProfile } from "@/lib/manage/queries";
+import { pushRoster } from "@/lib/manage/google-sheet";
+import { allSections } from "@/lib/site-content";
+import type { SessionStatus } from "@/lib/types/database";
 import {
   recordSchema,
   halaqaSchema,
@@ -114,6 +117,130 @@ export async function updateMember(_prev: ActionState, formData: FormData): Prom
   return { ok: true, notice: strings.manage.memberSaved };
 }
 
+// ═══════════ المرحلة ٦: محرّر الصفحة الرئيسية ═══════════
+// كل تعديل يستدعي revalidatePath("/") — الصفحة ثابتة، فالتجديد عند الطلب هو
+// ما يجعل التغيير يظهر فورًا بدل انتظار ساعة التجديد الدورية.
+
+/** بذر الأقسام التسعة من الشيفرة إلى القاعدة — مرّة واحدة، وآمن التكرار. */
+export async function seedSections(_prev: ActionState, _formData: FormData): Promise<ActionState> {
+  const me = await getAdminProfile();
+  if (!me) return { ok: false, error: strings.manage.errAdminOnly };
+
+  const supabase = await createClient();
+  const { data: existing } = await supabase.from("site_sections").select("type");
+  const have = new Set((existing ?? []).map((r) => (r as { type: string }).type));
+
+  const missing = allSections
+    .filter((s) => !have.has(s.type))
+    .map((s) => ({
+      type: s.type,
+      order_index: s.order,
+      is_visible: s.visible,
+      content: s.content as Record<string, unknown>,
+    }));
+
+  if (missing.length > 0) {
+    const { error } = await supabase.from("site_sections").insert(missing);
+    if (error) return { ok: false, error: strings.auth.errGeneric };
+  }
+
+  revalidatePath("/");
+  revalidatePath("/manage");
+  return { ok: true, notice: strings.manage.siteSeeded };
+}
+
+/** حفظ محتوى قسم. المحتوى يصل كـ JSON كامل، فالحقول التي لم يعرضها النموذج تبقى. */
+export async function saveSection(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const id = String(formData.get("id") ?? "");
+  const raw = String(formData.get("content") ?? "");
+  if (!id || !raw) return { ok: false, error: strings.auth.errGeneric };
+  if (raw.length > 200_000) return { ok: false, error: strings.auth.errGeneric };
+
+  const me = await getAdminProfile();
+  if (!me) return { ok: false, error: strings.manage.errAdminOnly };
+
+  let content: unknown;
+  try {
+    content = JSON.parse(raw);
+  } catch {
+    return { ok: false, error: strings.auth.errGeneric };
+  }
+  if (typeof content !== "object" || content === null || Array.isArray(content)) {
+    return { ok: false, error: strings.auth.errGeneric };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("site_sections")
+    .update({ content, updated_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) return { ok: false, error: strings.auth.errGeneric };
+
+  revalidatePath("/");
+  revalidatePath("/manage");
+  return { ok: true, notice: strings.manage.siteSaved };
+}
+
+/** إظهار/إخفاء قسم. */
+export async function toggleSection(id: string, visible: boolean): Promise<{ ok: boolean }> {
+  if (typeof id !== "string" || !id || typeof visible !== "boolean") return { ok: false };
+  const me = await getAdminProfile();
+  if (!me) return { ok: false };
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("site_sections").update({ is_visible: visible }).eq("id", id);
+  if (error) return { ok: false };
+
+  revalidatePath("/");
+  revalidatePath("/manage");
+  return { ok: true };
+}
+
+/**
+ * تحريك قسم خطوة. نبادل order_index مع جاره في الاتجاه المطلوب.
+ * القراءة قبل الكتابة تمنع الاعتماد على ترتيبٍ أرسله المتصفّح وقد يكون قديمًا.
+ */
+export async function moveSection(id: string, direction: "up" | "down"): Promise<{ ok: boolean }> {
+  if (typeof id !== "string" || !id || (direction !== "up" && direction !== "down")) return { ok: false };
+  const me = await getAdminProfile();
+  if (!me) return { ok: false };
+
+  const supabase = await createClient();
+  const { data } = await supabase.from("site_sections").select("id, order_index").order("order_index");
+  const list = (data ?? []) as { id: string; order_index: number }[];
+
+  const i = list.findIndex((s) => s.id === id);
+  const j = direction === "up" ? i - 1 : i + 1;
+  if (i < 0 || j < 0 || j >= list.length) return { ok: false }; // عند الطرف: لا شيء
+
+  const a = list[i];
+  const b = list[j];
+  const [{ error: e1 }, { error: e2 }] = await Promise.all([
+    supabase.from("site_sections").update({ order_index: b.order_index }).eq("id", a.id),
+    supabase.from("site_sections").update({ order_index: a.order_index }).eq("id", b.id),
+  ]);
+  if (e1 || e2) return { ok: false };
+
+  revalidatePath("/");
+  revalidatePath("/manage");
+  return { ok: true };
+}
+
+// ── دفع قائمة الأعضاء إلى جدول Google (بطلب صريح، لا مع كل حفظة) ──
+export async function syncSheet(_prev: ActionState, _formData: FormData): Promise<ActionState> {
+  const me = await getAdminProfile();
+  if (!me) return { ok: false, error: strings.manage.errAdminOnly };
+
+  const result = await pushRoster();
+  if (!result.ok) {
+    return {
+      ok: false,
+      error: result.reason === "unconfigured" ? strings.manage.sheetUnconfigured : strings.manage.errSheet,
+    };
+  }
+  return { ok: true, notice: `${strings.manage.sheetSynced} — ${result.count} ${strings.manage.statMembers}` };
+}
+
 // ── تعديل حلقة قائمة ──
 export async function updateHalaqa(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const parsed = halaqaEditSchema.safeParse(Object.fromEntries(formData));
@@ -137,6 +264,52 @@ export async function updateHalaqa(_prev: ActionState, formData: FormData): Prom
 
   revalidatePath("/manage");
   return { ok: true, notice: strings.manage.halaqaSaved };
+}
+
+// ── تلوين خانة في جدول التتبع: الحالة وحدها، بأقل قدر ممكن من العمل ──
+// upsert يحدّث الأعمدة المُرسَلة فقط، فالسورة والآية والملاحظة المسجّلة سابقًا تبقى.
+const CELL_STATUSES: SessionStatus[] = ["green", "red", "absent", "excused", "pending"];
+
+export async function setCellStatus(
+  memberId: string,
+  weekNumber: number,
+  status: SessionStatus
+): Promise<{ ok: boolean }> {
+  // لا نثق بالعميل: هذه وسائط مُسلسلة، وأي متصفّح يستطيع اختلاقها.
+  if (typeof memberId !== "string" || memberId.length === 0) return { ok: false };
+  if (!Number.isInteger(weekNumber) || weekNumber < 1 || weekNumber > 53) return { ok: false };
+  if (!CELL_STATUSES.includes(status)) return { ok: false };
+
+  const me = await getStaffProfile();
+  if (!me) return { ok: false };
+
+  const supabase = await createClient();
+  const { data: cycle } = await supabase
+    .from("program_cycles")
+    .select("id")
+    .eq("is_active", true)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!cycle) return { ok: false };
+
+  // RLS: is_admin() OR supervises(member_id) — المشرف لا يلوّن خانة غير طلبته.
+  const { error } = await supabase.from("weekly_sessions").upsert(
+    {
+      member_id: memberId,
+      cycle_id: cycle.id,
+      week_number: weekNumber,
+      status,
+      evaluated_by: me.id,
+      evaluated_at: new Date().toISOString(),
+    },
+    { onConflict: "member_id,cycle_id,week_number" }
+  );
+  if (error) return { ok: false };
+
+  revalidatePath("/manage");
+  revalidatePath("/dashboard");
+  return { ok: true };
 }
 
 // ── تسجيل حصّة الاستظهار الأسبوعية ──
