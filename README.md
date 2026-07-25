@@ -21,6 +21,7 @@ program — weekly ḥifẓ tracking, study circles (ḥalaqāt), exams and anno
 - 🔐 **التسجيل والدخول** — بريد وكلمة مرور، مسار الحفظ أو النادي.
 - 📊 **لوحة العضو** — جدول تتبّع أسبوعي بالألوان، الموضع في الحفظ، الاختبار القادم، الإعلانات.
 - 🛠️ **الإدارة** — تسجيل الاستظهار، قبول الأعضاء، الحلقات، الاختبارات، الإعلانات والتذكيرات مع الصور.
+- 👥 **إدارة الأشخاص** — الأدوار، توزيع الأعضاء على الحلقات، تعديل التقدم، وتصدير القائمة إلى Excel.
 
 ## 🧱 التقنيات · Tech stack
 
@@ -72,5 +73,5 @@ Run the SQL files in `supabase/migrations/` in order, via the Supabase **SQL Edi
 
 ## 📄 الحالة · Status
 
-المراحل ١–٤ مكتملة (الواجهة · التسجيل · لوحة العضو · الإدارة). العمل مستمرّ. 🌱
-Phases 1–4 complete (homepage · auth · member dashboard · management). Work in progress.
+المراحل ١–٥ مكتملة (الواجهة · التسجيل · لوحة العضو · الإدارة · إدارة الأشخاص). العمل مستمرّ. 🌱
+Phases 1–5 complete (homepage · auth · member dashboard · management · people admin). Work in progress.

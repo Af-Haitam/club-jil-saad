@@ -3,7 +3,15 @@
 // كل إجراءات منطقة الإدارة في مكان واحد — تُستورد من الصفحة الواحدة ومن نماذجها.
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { recordSchema, halaqaSchema, examSchema, contentSchema } from "@/lib/validation/manage";
+import { getAdminProfile } from "@/lib/manage/queries";
+import {
+  recordSchema,
+  halaqaSchema,
+  halaqaEditSchema,
+  examSchema,
+  contentSchema,
+  memberSchema,
+} from "@/lib/validation/manage";
 import { zodFieldErrors, type ActionState } from "@/lib/validation/auth";
 import { strings } from "@/lib/strings";
 
@@ -14,6 +22,121 @@ export async function approveMember(formData: FormData) {
   const supabase = await createClient();
   await supabase.from("profiles").update({ status: "active" }).eq("id", id);
   revalidatePath("/manage");
+}
+
+// ── رفض طلب انضمام: pending → suspended (قابل للعكس، ولا يفقد أي بيانات) ──
+export async function rejectMember(formData: FormData) {
+  const id = String(formData.get("id") ?? "");
+  const me = await getAdminProfile();
+  if (!id || !me || id === me.id) return;
+  const supabase = await createClient();
+  await supabase.from("profiles").update({ status: "suspended" }).eq("id", id);
+  revalidatePath("/manage");
+}
+
+// ── تعديل عضو: الدور والحالة والعضوية والحلقة والتقدم في حفظة واحدة ──
+export async function updateMember(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const parsed = memberSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { ok: false, fieldErrors: zodFieldErrors(parsed.error) };
+  const v = parsed.data;
+
+  // الأدوار والحالات للمدير وحده — لا نثق بما أرسله المتصفّح، نقرأ الدور من القاعدة.
+  const me = await getAdminProfile();
+  if (!me) return { ok: false, error: strings.manage.errAdminOnly };
+
+  // حارس ١: لا تغيّر دورك أو حالتك بنفسك — أسهل طريق لقفل نفسك خارج الإدارة.
+  if (v.id === me.id && (v.role !== me.role || v.status !== me.status)) {
+    return { ok: false, error: strings.manage.errSelfRole };
+  }
+
+  const supabase = await createClient();
+
+  // حارس ٢: لا يبقى النادي بلا مدير واحد على الأقل.
+  if (v.role !== "admin") {
+    const { data: target } = await supabase.from("profiles").select("role").eq("id", v.id).single();
+    if (target?.role === "admin") {
+      const { count } = await supabase
+        .from("profiles")
+        .select("id", { count: "exact", head: true })
+        .eq("role", "admin");
+      if ((count ?? 0) <= 1) return { ok: false, error: strings.manage.errLastAdmin };
+    }
+  }
+
+  // RLS: profiles_update = is_admin() · والمُشغّل protect_profile_columns يفكّ
+  // تجميد role/status/in_club/in_hifz للمدير وحده.
+  const { error: profileError } = await supabase
+    .from("profiles")
+    .update({
+      role: v.role,
+      status: v.status,
+      in_hifz: v.in_hifz,
+      in_club: v.in_club,
+      session_day: v.session_day,
+      session_time: v.session_time,
+      weekly_amount: v.weekly_amount,
+    })
+    .eq("id", v.id);
+  if (profileError) return { ok: false, error: strings.auth.errGeneric };
+
+  // الحلقة: عضو في حلقة واحدة فقط — عطّل القديم ثم فعّل المختار.
+  // القيد unique(member_id, halaqa_id) يجعل العودة لحلقة سابقة تحديثًا لا صفًّا جديدًا.
+  const { error: offError } = await supabase
+    .from("enrollments")
+    .update({ active: false })
+    .eq("member_id", v.id)
+    .eq("active", true);
+  if (offError) return { ok: false, error: strings.auth.errGeneric };
+
+  if (v.halaqa_id) {
+    const { error: onError } = await supabase
+      .from("enrollments")
+      .upsert({ member_id: v.id, halaqa_id: v.halaqa_id, active: true }, { onConflict: "member_id,halaqa_id" });
+    if (onError) return { ok: false, error: strings.auth.errGeneric };
+  }
+
+  // التقدم: صف واحد لكل عضو (unique member_id) — يُنشأ عند أول حفظ.
+  const { error: progressError } = await supabase.from("hifz_progress").upsert(
+    {
+      member_id: v.id,
+      current_surah: v.current_surah,
+      current_ayah: v.current_ayah,
+      memorized_pages: v.memorized_pages,
+      memorized_juz: v.memorized_juz,
+      last_updated_by: me.id,
+    },
+    { onConflict: "member_id" }
+  );
+  if (progressError) return { ok: false, error: strings.auth.errGeneric };
+
+  revalidatePath("/manage");
+  revalidatePath("/dashboard");
+  return { ok: true, notice: strings.manage.memberSaved };
+}
+
+// ── تعديل حلقة قائمة ──
+export async function updateHalaqa(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const parsed = halaqaEditSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { ok: false, fieldErrors: zodFieldErrors(parsed.error) };
+  const v = parsed.data;
+
+  const me = await getAdminProfile();
+  if (!me) return { ok: false, error: strings.manage.errAdminOnly };
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("halaqat")
+    .update({
+      name: v.name,
+      supervisor_id: v.supervisor_id,
+      schedule_note: v.schedule_note,
+      capacity: v.capacity,
+    })
+    .eq("id", v.id);
+  if (error) return { ok: false, error: strings.auth.errGeneric };
+
+  revalidatePath("/manage");
+  return { ok: true, notice: strings.manage.halaqaSaved };
 }
 
 // ── تسجيل حصّة الاستظهار الأسبوعية ──

@@ -1,13 +1,22 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { getMembers, getHalaqat, getActiveCycle } from "@/lib/manage/queries";
-import { approveMember } from "./actions";
+import {
+  getStaffProfile,
+  getMembers,
+  getHalaqat,
+  getActiveCycle,
+  getEnrollments,
+  getProgress,
+} from "@/lib/manage/queries";
+import { approveMember, rejectMember } from "./actions";
 import RecordForm from "@/components/manage/RecordForm";
 import HalaqaForm from "@/components/manage/HalaqaForm";
+import HalaqaEditForm from "@/components/manage/HalaqaEditForm";
+import MemberForm from "@/components/manage/MemberForm";
 import ExamForm from "@/components/manage/ExamForm";
 import ContentForm from "@/components/manage/ContentForm";
 import { strings } from "@/lib/strings";
-import type { UserRole } from "@/lib/types/database";
+import type { UserRole, Profile, HifzProgress, Halaqa } from "@/lib/types/database";
 
 export const metadata: Metadata = { title: `${strings.manage.title} — ${strings.auth.brand}` };
 
@@ -22,14 +31,48 @@ const sectionNav = [
   { id: "content", n: "05", label: m.navContent },
 ];
 
+const roleLabel: Record<UserRole, string> = { admin: m.roleAdmin, supervisor: m.roleSupervisor, member: m.roleMember };
+
 export default async function ManagePage() {
-  const [members, halaqat, cycle] = await Promise.all([getMembers(), getHalaqat(), getActiveCycle()]);
+  const [me, members, halaqat, cycle, enrollments, progress] = await Promise.all([
+    getStaffProfile(),
+    getMembers(),
+    getHalaqat(),
+    getActiveCycle(),
+    getEnrollments(),
+    getProgress(),
+  ]);
+
+  // القوقعة تُعيد غير الطاقم قبل الوصول إلى هنا؛ هذا للتحقق من النوع فقط.
+  if (!me) return null;
+  const isAdmin = me.role === "admin";
 
   const pending = members.filter((x) => x.status === "pending");
   const active = members.filter((x) => x.status === "active");
+  const suspended = members.filter((x) => x.status === "suspended");
   const nameById = new Map(members.map((x) => [x.id, x.full_name]));
-  const roleLabel: Record<UserRole, string> = { admin: m.roleAdmin, supervisor: m.roleSupervisor, member: m.roleMember };
   const supervisorOpts = active.map((x) => ({ id: x.id, full_name: x.full_name }));
+  const halaqaOpts = halaqat.map((h) => ({ id: h.id, name: h.name }));
+
+  // العضو في حلقة نشطة واحدة على الأكثر — الخريطتان تُغنيان عن استعلام لكل صفّ.
+  const halaqaOf = new Map(enrollments.map((e) => [e.member_id, e.halaqa_id]));
+  const halaqaNameById = new Map(halaqat.map((h) => [h.id, h.name]));
+  const progressOf = new Map(progress.map((p) => [p.member_id, p]));
+  const rosterOf = new Map<string, Profile[]>(halaqat.map((h) => [h.id, []]));
+  for (const p of active) {
+    const hid = halaqaOf.get(p.id);
+    if (hid) rosterOf.get(hid)?.push(p);
+  }
+
+  const rowProps = (p: Profile) => ({
+    member: p,
+    progress: (progressOf.get(p.id) ?? null) as HifzProgress | null,
+    halaqaName: halaqaNameById.get(halaqaOf.get(p.id) ?? "") ?? null,
+    halaqaId: halaqaOf.get(p.id) ?? "",
+    halaqat: halaqaOpts,
+    isSelf: p.id === me.id,
+    isAdmin,
+  });
 
   return (
     <div className="flex flex-col gap-16 pb-12">
@@ -71,7 +114,22 @@ export default async function ManagePage() {
       </ManageSection>
 
       {/* ── 02 · الأعضاء ── */}
-      <ManageSection id="members" n="02" title={m.navMembers}>
+      <ManageSection
+        id="members"
+        n="02"
+        title={m.navMembers}
+        action={
+          isAdmin && members.length > 0 ? (
+            <a
+              href="/manage/export"
+              download
+              className="rounded-sm border border-gold/60 px-4 py-2 text-sm text-gold transition-colors hover:bg-gold hover:text-ink"
+            >
+              {m.exportXlsx}
+            </a>
+          ) : null
+        }
+      >
         <div className="flex flex-col gap-9">
           <div>
             <h3 className="mb-4 font-bold text-lg text-gold-light">{m.pendingTitle}</h3>
@@ -93,15 +151,28 @@ export default async function ManagePage() {
                         {p.in_club ? m.mClub : m.mHifz} · {strings.weekdays[p.session_day ?? 0]}
                       </p>
                     </div>
-                    <form action={approveMember}>
-                      <input type="hidden" name="id" value={p.id} />
-                      <button
-                        type="submit"
-                        className="rounded-sm bg-gold px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-gold-light"
-                      >
-                        {m.approve}
-                      </button>
-                    </form>
+                    <div className="flex items-center gap-2">
+                      <form action={approveMember}>
+                        <input type="hidden" name="id" value={p.id} />
+                        <button
+                          type="submit"
+                          className="rounded-sm bg-gold px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-gold-light"
+                        >
+                          {m.approve}
+                        </button>
+                      </form>
+                      {isAdmin && (
+                        <form action={rejectMember}>
+                          <input type="hidden" name="id" value={p.id} />
+                          <button
+                            type="submit"
+                            className="rounded-sm border border-ink-line px-4 py-2 text-sm text-parchment/70 transition-colors hover:border-tick-red hover:text-tick-red"
+                          >
+                            {m.reject}
+                          </button>
+                        </form>
+                      )}
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -113,41 +184,31 @@ export default async function ManagePage() {
             {active.length === 0 ? (
               <Empty>{m.dash}</Empty>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[34rem] text-sm">
-                  <thead>
-                    <tr className="border-b border-ink-line text-parchment/55">
-                      <th className="p-2 text-start font-medium">{m.colName}</th>
-                      <th className="p-2 text-start font-medium">{m.colContact}</th>
-                      <th className="p-2 text-start font-medium">{m.colDay}</th>
-                      <th className="p-2 text-start font-medium">{m.colMembership}</th>
-                      <th className="p-2 text-start font-medium">{m.colRole}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {active.map((p) => (
-                      <tr key={p.id} className="border-b border-ink-line/50">
-                        <td className="p-2 text-parchment">{p.full_name}</td>
-                        <td className="p-2 text-parchment/60" dir="ltr">
-                          {p.phone ?? ""}
-                        </td>
-                        <td className="p-2 text-parchment/70">{strings.weekdays[p.session_day ?? 0]}</td>
-                        <td className="p-2 text-parchment/70">{p.in_club ? m.mClub : m.mHifz}</td>
-                        <td className="p-2 text-parchment/70">{roleLabel[p.role]}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <MemberList>
+                {active.map((p) => (
+                  <MemberRow key={p.id} {...rowProps(p)} />
+                ))}
+              </MemberList>
             )}
           </div>
+
+          {suspended.length > 0 && (
+            <div>
+              <h3 className="mb-4 font-bold text-lg text-parchment/60">{m.suspendedGroup}</h3>
+              <MemberList>
+                {suspended.map((p) => (
+                  <MemberRow key={p.id} {...rowProps(p)} />
+                ))}
+              </MemberList>
+            </div>
+          )}
         </div>
       </ManageSection>
 
       {/* ── 03 · الحلقات ── */}
       <ManageSection id="halaqat" n="03" title={m.navHalaqat} desc={m.halaqatSubtitle}>
         <div className="flex flex-col gap-8">
-          <HalaqaForm supervisors={supervisorOpts} />
+          {isAdmin && <HalaqaForm supervisors={supervisorOpts} />}
           <div>
             <h3 className="mb-4 font-bold text-lg text-gold-light">{m.halaqatTitle}</h3>
             {halaqat.length === 0 ? (
@@ -155,14 +216,14 @@ export default async function ManagePage() {
             ) : (
               <ul className="flex flex-col gap-3">
                 {halaqat.map((h) => (
-                  <li key={h.id} className="rounded-lg border border-ink-line bg-ink-soft/40 p-4">
-                    <p className="font-bold text-parchment">{h.name}</p>
-                    <p className="text-sm text-parchment/60">
-                      {h.supervisor_id
-                        ? `${m.halaqaSupervisor}: ${nameById.get(h.supervisor_id) ?? ""}`
-                        : m.chooseSupervisor}
-                      {h.schedule_note ? ` · ${h.schedule_note}` : ""}
-                    </p>
+                  <li key={h.id} className="overflow-hidden rounded-lg border border-ink-line bg-ink-soft/40">
+                    <HalaqaCard
+                      halaqa={h}
+                      supervisorName={h.supervisor_id ? nameById.get(h.supervisor_id) ?? null : null}
+                      roster={rosterOf.get(h.id) ?? []}
+                      supervisors={supervisorOpts}
+                      isAdmin={isAdmin}
+                    />
                   </li>
                 ))}
               </ul>
@@ -187,30 +248,181 @@ export default async function ManagePage() {
   );
 }
 
+// ─── قائمة الأعضاء ─────────────────────────────────────────────────────
+
+function MemberList({ children }: { children: ReactNode }) {
+  return (
+    <div className="overflow-hidden rounded-lg border border-ink-line">
+      <div className="hidden border-b border-ink-line bg-ink-soft/60 px-4 py-2 text-xs text-parchment/55 sm:grid sm:grid-cols-[1.7fr_0.9fr_1.1fr_0.8fr_auto] sm:gap-3">
+        <span>{m.colName}</span>
+        <span>{m.colDay}</span>
+        <span>{m.colHalaqa}</span>
+        <span>{m.colRole}</span>
+        <span aria-hidden="true" />
+      </div>
+      <ul>{children}</ul>
+    </div>
+  );
+}
+
+/**
+ * صفّ عضو — يتّسع في مكانه ليكشف نموذج التعديل، بلا جافاسكربت للفتح والإغلاق.
+ * غير المدير (المشرف) يرى الصفّ للقراءة فقط.
+ */
+function MemberRow({
+  member,
+  progress,
+  halaqaName,
+  halaqaId,
+  halaqat,
+  isSelf,
+  isAdmin,
+}: {
+  member: Profile;
+  progress: HifzProgress | null;
+  halaqaName: string | null;
+  halaqaId: string;
+  halaqat: { id: string; name: string }[];
+  isSelf: boolean;
+  isAdmin: boolean;
+}) {
+  const day = member.session_day === null ? m.dash : strings.weekdays[member.session_day];
+  const halaqa = halaqaName ?? m.noHalaqa;
+  const role = roleLabel[member.role];
+
+  const summary = (
+    <>
+      <span className="font-medium text-parchment">{member.full_name}</span>
+      {isAdmin && (
+        <span className="col-start-2 row-start-1 justify-self-end text-xs text-gold/75 sm:col-start-5">
+          {m.editMember}
+        </span>
+      )}
+      <span className="col-span-2 text-sm text-parchment/55 sm:hidden">{[day, halaqa, role].join(" · ")}</span>
+      <span className="hidden text-sm text-parchment/60 sm:col-start-2 sm:row-start-1 sm:block">{day}</span>
+      <span className="hidden text-sm text-parchment/60 sm:col-start-3 sm:row-start-1 sm:block">{halaqa}</span>
+      <span className="hidden text-sm text-parchment/60 sm:col-start-4 sm:row-start-1 sm:block">{role}</span>
+    </>
+  );
+
+  const grid =
+    "grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1 px-4 py-3 sm:grid-cols-[1.7fr_0.9fr_1.1fr_0.8fr_auto]";
+
+  if (!isAdmin) {
+    return (
+      <li className="border-b border-ink-line/50 last:border-b-0">
+        <div className={grid}>{summary}</div>
+      </li>
+    );
+  }
+
+  return (
+    <li className="border-b border-ink-line/50 last:border-b-0">
+      <details>
+        <summary
+          className={`${grid} cursor-pointer list-none transition-colors hover:bg-ink-soft/40 [&::-webkit-details-marker]:hidden`}
+        >
+          {summary}
+        </summary>
+        <MemberForm member={member} progress={progress} halaqat={halaqat} halaqaId={halaqaId} isSelf={isSelf} />
+      </details>
+    </li>
+  );
+}
+
+// ─── بطاقة حلقة: المشرف والطلبة، وللمدير نموذج تعديل يتّسع في مكانه ──────
+
+function HalaqaCard({
+  halaqa,
+  supervisorName,
+  roster,
+  supervisors,
+  isAdmin,
+}: {
+  halaqa: Halaqa;
+  supervisorName: string | null;
+  roster: Profile[];
+  supervisors: { id: string; full_name: string }[];
+  isAdmin: boolean;
+}) {
+  const head = (
+    <>
+      <div>
+        <p className="font-bold text-parchment">{halaqa.name}</p>
+        <p className="text-sm text-parchment/60">
+          {supervisorName ? `${m.halaqaSupervisor}: ${supervisorName}` : m.chooseSupervisor}
+          {halaqa.schedule_note ? ` · ${halaqa.schedule_note}` : ""}
+          {` · ${roster.length} ${m.halaqaCount}`}
+        </p>
+      </div>
+      {isAdmin && <span className="text-xs text-gold/75">{m.halaqaEdit}</span>}
+    </>
+  );
+
+  const body = (
+    <div className="border-t border-ink-line px-5 py-4">
+      <h4 className="mb-2 font-bold text-sm text-gold-light">{m.halaqaRoster}</h4>
+      {roster.length === 0 ? (
+        <p className="text-sm text-parchment/55">{m.halaqaEmpty}</p>
+      ) : (
+        <ul className="flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-parchment/70">
+          {roster.map((p) => (
+            <li key={p.id}>{p.full_name}</li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+
+  if (!isAdmin) {
+    return (
+      <>
+        <div className="flex items-center justify-between gap-3 p-4">{head}</div>
+        {body}
+      </>
+    );
+  }
+
+  return (
+    <details>
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4 transition-colors hover:bg-ink-soft/60 [&::-webkit-details-marker]:hidden">
+        {head}
+      </summary>
+      {body}
+      <HalaqaEditForm halaqa={halaqa} supervisors={supervisors} />
+    </details>
+  );
+}
+
 // رأس قسم موحّد: رقم + عنوان + وصف اختياري — نفس إيقاع عناوين الصفحة الرئيسية.
 function ManageSection({
   id,
   n,
   title,
   desc,
+  action,
   children,
 }: {
   id: string;
   n: string;
   title: string;
   desc?: string;
+  action?: ReactNode;
   children: ReactNode;
 }) {
   return (
     <section id={id} className="scroll-mt-24">
-      <header className="mb-6 flex items-baseline gap-4">
-        <span className="font-display text-lg tabular-nums text-gold/60" aria-hidden="true">
-          {n}
-        </span>
-        <div>
-          <h2 className="font-display text-2xl text-parchment">{title}</h2>
-          {desc && <p className="mt-1 text-sm text-parchment/55">{desc}</p>}
+      <header className="mb-6 flex flex-wrap items-baseline justify-between gap-4">
+        <div className="flex items-baseline gap-4">
+          <span className="font-display text-lg tabular-nums text-gold/60" aria-hidden="true">
+            {n}
+          </span>
+          <div>
+            <h2 className="font-display text-2xl text-parchment">{title}</h2>
+            {desc && <p className="mt-1 text-sm text-parchment/55">{desc}</p>}
+          </div>
         </div>
+        {action}
       </header>
       {children}
     </section>

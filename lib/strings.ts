@@ -90,6 +90,11 @@ export const strings = {
     pendingBody:
       "تم استلام طلب انضمامك. سيطّلع عليه المشرف قريبًا، وستصلك رسالة فور قبول العضوية.",
     pendingHint: "لا حاجة لإعادة التسجيل — يكفي الانتظار.",
+
+    // حساب موقوف/مرفوض — نصّ مختلف، فالمراجعة انتهت
+    suspendedTitle: "حسابك موقوف",
+    suspendedBody: "لم تُفعَّل عضويتك حاليًا. إن كنت ترى أنّ هذا خطأ فتواصل مع مشرف النادي.",
+    suspendedHint: "إعادة التسجيل لن تغيّر شيئًا — التواصل مع المشرف هو الطريق.",
     signOut: "تسجيل الخروج",
 
     // لوحة مؤقتة (تُبنى في المرحلة ٣)
@@ -266,6 +271,46 @@ export const strings = {
     imageTooBig: "الصورة كبيرة جدًا (الحد ٥ ميغابايت)",
     removeImage: "إزالة الصورة",
     remindersHeading: "تذكيرات",
+
+    // ── المرحلة ٥: إدارة الأشخاص ──
+    reject: "رفض",
+    memberRejected: "تم رفض الطلب",
+    suspendedGroup: "الموقوفون",
+    editMember: "تعديل",
+    exportXlsx: "تصدير إلى Excel",
+    colHalaqa: "الحلقة",
+    noHalaqa: "بدون حلقة",
+    fRole: "الدور",
+    fStatus: "الحالة",
+    stActive: "نشط",
+    stSuspended: "موقوف",
+    stPending: "قيد المراجعة",
+    fInHifz: "مسجَّل في الحفظ",
+    fInClub: "عضو في النادي",
+    fDay: "يوم الاستظهار",
+    fTime: "وقت الحصة",
+    fAmount: "المقدار الأسبوعي",
+    chooseDay: "بدون يوم",
+    chooseAmount: "بدون مقدار",
+    progressTitle: "التقدم في الحفظ",
+    pSurah: "السورة الحالية",
+    pAyah: "الآية",
+    pPages: "الصفحات المحفوظة",
+    pJuz: "الأجزاء المحفوظة",
+    saveMember: "حفظ التعديلات",
+    savingMember: "جارٍ الحفظ…",
+    memberSaved: "تم حفظ التعديلات",
+    errLastAdmin: "لا يمكن إزالة آخر مدير — عيّن مديرًا آخر أولًا",
+    errSelfRole: "لا يمكنك تغيير دورك أو حالتك بنفسك",
+    errAdminOnly: "هذا الإجراء للمدير فقط",
+
+    halaqaEdit: "تعديل الحلقة",
+    halaqaSave: "حفظ الحلقة",
+    halaqaSaving: "جارٍ الحفظ…",
+    halaqaSaved: "تم حفظ الحلقة",
+    halaqaRoster: "الطلبة",
+    halaqaEmpty: "لا طلبة في هذه الحلقة بعد",
+    halaqaCount: "طالب",
   },
 
   // أيام الأسبوع (0=الأحد) — لاختيار يوم الاستظهار
