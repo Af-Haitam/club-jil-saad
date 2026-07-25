@@ -266,6 +266,53 @@ export async function updateHalaqa(_prev: ActionState, formData: FormData): Prom
   return { ok: true, notice: strings.manage.halaqaSaved };
 }
 
+// ── تغيير عدد أسابيع الدورة النشطة ──
+// يحتاج سياسة cycles_write من 0004_cycles_write.sql؛ بدونها يرفض RLS التحديث
+// بلا خطأ (صفر صفوف متأثّرة)، لذلك نطلب select ونتحقق من العدد بأنفسنا.
+export async function setCycleWeeks(weeks: number): Promise<{ ok: boolean; error?: string }> {
+  if (!Number.isInteger(weeks) || weeks < 1 || weeks > 53) {
+    return { ok: false, error: strings.manage.errWeekRange };
+  }
+
+  const me = await getAdminProfile();
+  if (!me) return { ok: false, error: strings.manage.errAdminOnly };
+
+  const supabase = await createClient();
+  const { data: cycle } = await supabase
+    .from("program_cycles")
+    .select("id, week_count")
+    .eq("is_active", true)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!cycle) return { ok: false, error: strings.manage.noCycle };
+
+  const current = cycle as { id: string; week_count: number };
+
+  // التقليص يخفي بيانات مسجّلة بدل أن يحذفها — وهو أسوأ من الحذف لأنّه صامت.
+  if (weeks < current.week_count) {
+    const { count } = await supabase
+      .from("weekly_sessions")
+      .select("id", { count: "exact", head: true })
+      .eq("cycle_id", current.id)
+      .gt("week_number", weeks)
+      .neq("status", "pending");
+    if ((count ?? 0) > 0) return { ok: false, error: strings.manage.errWeekHasData };
+  }
+
+  const { data: updated, error } = await supabase
+    .from("program_cycles")
+    .update({ week_count: weeks })
+    .eq("id", current.id)
+    .select("id");
+  if (error) return { ok: false, error: strings.auth.errGeneric };
+  if (!updated || updated.length === 0) return { ok: false, error: strings.manage.errWeekBlocked };
+
+  revalidatePath("/manage");
+  revalidatePath("/dashboard");
+  return { ok: true };
+}
+
 // ── تلوين خانة في جدول التتبع: الحالة وحدها، بأقل قدر ممكن من العمل ──
 // upsert يحدّث الأعمدة المُرسَلة فقط، فالسورة والآية والملاحظة المسجّلة سابقًا تبقى.
 const CELL_STATUSES: SessionStatus[] = ["green", "red", "absent", "excused", "pending"];

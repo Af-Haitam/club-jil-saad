@@ -3,7 +3,7 @@
 // جدول التتبع التفاعلي — نفس تخطيط الورقة: صفّ لكل طالب، عمود لكل أسبوع.
 // تُضغط الخانة فتظهر الألوان بمعانيها، ويُختار لون فيُحفظ فورًا.
 import { useEffect, useMemo, useOptimistic, useRef, useState, useTransition } from "react";
-import { setCellStatus } from "@/app/manage/actions";
+import { setCellStatus, setCycleWeeks } from "@/app/manage/actions";
 import RecordForm from "@/components/manage/RecordForm";
 import { statusMeta, STATUS_ORDER } from "@/lib/dashboard/hifz";
 import { strings } from "@/lib/strings";
@@ -29,10 +29,13 @@ export default function TrackingSheet({
   members,
   sessions,
   weekCount,
+  canEditWeeks = false,
 }: {
   members: Profile[];
   sessions: WeeklySession[];
   weekCount: number;
+  /** عدد الأسابيع خاصية الدورة كلها — للمدير وحده، لا لكل مشرف. */
+  canEditWeeks?: boolean;
 }) {
   const weeks = useMemo(() => Array.from({ length: weekCount }, (_, i) => i + 1), [weekCount]);
 
@@ -95,7 +98,10 @@ export default function TrackingSheet({
         </p>
       )}
 
-      <Legend />
+      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+        <Legend />
+        {canEditWeeks && <WeekCount weekCount={weekCount} />}
+      </div>
 
       <div className="overflow-x-auto rounded-lg border border-ink-line">
         <table className="min-w-max border-separate border-spacing-0 text-sm">
@@ -180,6 +186,54 @@ export default function TrackingSheet({
           defaultWeek={detail?.week ?? 1}
         />
       </div>
+    </div>
+  );
+}
+
+/** طول الدورة: زرّان ورقم. التقليص يُرفض إن كان الأسبوع الأخير يحمل تسجيلات. */
+function WeekCount({ weekCount }: { weekCount: number }) {
+  const [pending, startTransition] = useTransition();
+  const [err, setErr] = useState("");
+
+  const change = (next: number) => {
+    setErr("");
+    startTransition(async () => {
+      const res = await setCycleWeeks(next);
+      if (!res.ok) setErr(res.error ?? "");
+    });
+  };
+
+  return (
+    <div className="flex flex-col items-end gap-1">
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-parchment/55">{m.weeksLabel}</span>
+        <button
+          type="button"
+          aria-label={m.weekRemove}
+          title={m.weekRemove}
+          disabled={pending || weekCount <= 1}
+          onClick={() => change(weekCount - 1)}
+          className="size-7 rounded-sm border border-ink-line text-parchment/70 transition-colors hover:border-gold/60 hover:text-gold disabled:cursor-not-allowed disabled:opacity-30"
+        >
+          −
+        </button>
+        <span className="w-6 text-center text-sm font-bold tabular-nums text-gold-light">{weekCount}</span>
+        <button
+          type="button"
+          aria-label={m.weekAdd}
+          title={m.weekAdd}
+          disabled={pending || weekCount >= 53}
+          onClick={() => change(weekCount + 1)}
+          className="size-7 rounded-sm border border-ink-line text-parchment/70 transition-colors hover:border-gold/60 hover:text-gold disabled:cursor-not-allowed disabled:opacity-30"
+        >
+          +
+        </button>
+      </div>
+      {err && (
+        <p role="alert" className="max-w-xs text-end text-xs text-tick-red">
+          {err}
+        </p>
+      )}
     </div>
   );
 }

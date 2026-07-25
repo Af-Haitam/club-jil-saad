@@ -189,6 +189,13 @@ export const strings = {
     open: "فتح",
 
     // جدول التتبع التفاعلي — نفس شكل الورقة، لكن الخانة تُضغط فتُلوَّن
+    weeksLabel: "الأسابيع",
+    weekAdd: "إضافة أسبوع",
+    weekRemove: "حذف آخر أسبوع",
+    errWeekHasData: "لا يمكن حذف الأسبوع الأخير — فيه تسجيلات محفوظة",
+    errWeekBlocked: "تعذّر التغيير — طبّق ملف الترحيل 0004_cycles_write.sql في Supabase أولًا",
+    errWeekRange: "عدد الأسابيع بين ١ و ٥٣",
+
     gridPick: "اختر التقييم",
     gridDetails: "تفاصيل (سورة، آية، أخطاء)",
     gridClose: "إغلاق",

@@ -124,7 +124,12 @@ export default async function ManagePage() {
         ) : active.length === 0 ? (
           <Empty>{m.noMembers}</Empty>
         ) : (
-          <TrackingSheet members={active} sessions={sessions} weekCount={cycle.week_count} />
+          <TrackingSheet
+            members={active}
+            sessions={sessions}
+            weekCount={cycle.week_count}
+            canEditWeeks={isAdmin}
+          />
         )}
       </ManageSection>
 
