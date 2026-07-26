@@ -3,7 +3,7 @@
 // جدول التتبع التفاعلي — نفس تخطيط الورقة: صفّ لكل طالب، عمود لكل أسبوع.
 // تُضغط الخانة فتظهر الألوان بمعانيها، ويُختار لون فيُحفظ فورًا.
 import { useEffect, useMemo, useOptimistic, useRef, useState, useTransition } from "react";
-import { setCellStatus, setCycleWeeks } from "@/app/manage/actions";
+import { setCellStatus, setCycleWeeks, setCycleStart } from "@/app/manage/actions";
 import RecordForm from "@/components/manage/RecordForm";
 import { statusMeta, STATUS_ORDER } from "@/lib/dashboard/hifz";
 import { strings } from "@/lib/strings";
@@ -29,11 +29,14 @@ export default function TrackingSheet({
   members,
   sessions,
   weekCount,
+  startDate = null,
   canEditWeeks = false,
 }: {
   members: Profile[];
   sessions: WeeklySession[];
   weekCount: number;
+  /** تاريخ بدء الدورة (YYYY-MM-DD) — أساس حساب الأسابيع والتذكير الصباحي. */
+  startDate?: string | null;
   /** عدد الأسابيع خاصية الدورة كلها — للمدير وحده، لا لكل مشرف. */
   canEditWeeks?: boolean;
 }) {
@@ -100,7 +103,12 @@ export default function TrackingSheet({
 
       <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
         <Legend />
-        {canEditWeeks && <WeekCount weekCount={weekCount} />}
+        {canEditWeeks && (
+          <div className="flex flex-wrap items-end gap-x-6 gap-y-3">
+            <CycleStart startDate={startDate} />
+            <WeekCount weekCount={weekCount} />
+          </div>
+        )}
       </div>
 
       <div className="overflow-x-auto rounded-lg border border-ink-line">
@@ -186,6 +194,63 @@ export default function TrackingSheet({
           defaultWeek={detail?.week ?? 1}
         />
       </div>
+    </div>
+  );
+}
+
+/**
+ * تاريخ بدء الدورة. ليس حقلًا إداريًّا ثانويًّا: المهمّة اليومية تحسب منه
+ * رقم الأسبوع، وبدونه تمتنع عن فتح أيّ حصّة — لذلك يصرخ الحقل حين يكون فارغًا.
+ */
+function CycleStart({ startDate }: { startDate: string | null }) {
+  const [pending, startTransition] = useTransition();
+  const [err, setErr] = useState("");
+  const [saved, setSaved] = useState(false);
+
+  const save = (value: string) => {
+    setErr("");
+    setSaved(false);
+    startTransition(async () => {
+      const res = await setCycleStart(value);
+      if (res.ok) setSaved(true);
+      else setErr(res.error ?? "");
+    });
+  };
+
+  return (
+    <div className="flex flex-col items-end gap-1">
+      <div className="flex items-center gap-2">
+        <label htmlFor="cycle-start" className="text-xs text-parchment/55">
+          {m.cycleStartLabel}
+        </label>
+        <input
+          id="cycle-start"
+          type="date"
+          defaultValue={startDate ?? ""}
+          disabled={pending}
+          onChange={(e) => save(e.target.value)}
+          aria-describedby="cycle-start-hint"
+          // color-scheme يجعل منتقي التاريخ الأصلي داكنًا كبقية اللوحة
+          className="rounded-sm border border-ink-line bg-ink px-2 py-1 text-sm text-parchment tabular-nums transition-colors outline-none [color-scheme:dark] focus-visible:border-gold focus-visible:ring-2 focus-visible:ring-gold/60 disabled:opacity-50"
+        />
+      </div>
+      {err ? (
+        <p role="alert" className="max-w-xs text-end text-xs text-tick-red">
+          {err}
+        </p>
+      ) : saved ? (
+        <p role="status" className="text-end text-xs text-tick-green">
+          {m.cycleStartSaved}
+        </p>
+      ) : startDate ? (
+        <p id="cycle-start-hint" className="text-end text-xs text-parchment/45">
+          {m.cycleStartHint}
+        </p>
+      ) : (
+        <p id="cycle-start-hint" className="max-w-xs text-end text-xs text-tick-absent">
+          {m.cycleStartMissing}
+        </p>
+      )}
     </div>
   );
 }

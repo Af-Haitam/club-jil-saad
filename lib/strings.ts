@@ -162,12 +162,58 @@ export const strings = {
     annTitle: "الإعلانات",
     annNone: "لا إعلانات حاليًا",
 
+    // ── المرحلة ٧: صندوق الإشعارات ──
+    navInbox: "الإشعارات",
+    inboxTitle: "صندوق الإشعارات",
+    inboxSubtitle: "كل ما وصلك من إعلانات وتذكيرات ومواعيد",
+    inboxNone: "لا إشعارات بعد — سيصلك هنا كل جديد بإذن الله",
+    // عدّاد لا جملة: «غير مقروء · 3» يتجنّب صيغ العدد الخمس في العربية
+    // ويقرأ بلمحة — والجملة الصحيحة نحويًا هنا كانت ستكلّف خمس عبارات.
+    inboxUnreadLabel: "غير مقروء",
+    inboxMarkAll: "تعليم الكل كمقروء",
+    inboxMarking: "جارٍ…",
+    inboxAllRead: "لا شيء غير مقروء",
+    inboxNew: "جديد",
+    kindAnnouncement: "إعلان",
+    kindReminder: "تذكير",
+    kindSystem: "من النادي",
+
+    // تفعيل التنبيهات على الجهاز
+    pushTitle: "تنبيهات الهاتف",
+    pushBody: "فعّل التنبيهات ليصلك موعد تسميعك صباح يومك، دون فتح الموقع.",
+    pushEnable: "فعّل التنبيهات على هذا الجهاز",
+    pushEnabling: "جارٍ التفعيل…",
+    pushOn: "التنبيهات مفعّلة على هذا الجهاز",
+    pushDisable: "إيقاف التنبيهات هنا",
+    pushDenied:
+      "التنبيهات محظورة في إعدادات المتصفح. اسمح بها لهذا الموقع ثم أعد المحاولة.",
+    pushUnsupported: "هذا المتصفح لا يدعم التنبيهات",
+    pushFailed: "تعذّر تفعيل التنبيهات — حاول مرّة أخرى",
+    pushIosTitle: "على الآيفون",
+    pushIosBody:
+      "التنبيهات على الآيفون لا تعمل من سفاري مباشرة. افتح زرّ المشاركة ثم «إضافة إلى الشاشة الرئيسية»، وافتح الموقع من الأيقونة الجديدة، ثم فعّل التنبيهات من هنا.",
+
     profileTitle: "ملفي الشخصي",
     profileSubtitle: "بيانات حسابك وتفضيلات الاستظهار",
     profileSave: "حفظ التغييرات",
     profileSaving: "جارٍ الحفظ…",
     profileSaved: "تم حفظ التغييرات بنجاح",
     backToDashboard: "العودة إلى اللوحة",
+  },
+
+  // ── نصوص المهمّة اليومية (المرحلة ٧) — تصل الهاتف، فلتكن قصيرة ──
+  notify: {
+    sessionTitle: "اليوم موعد تسميعك",
+    sessionBody: "استعدّ لحصّتك — وفّقك الله.",
+    sessionBodyAt: "حصّتك اليوم على الساعة {time} — وفّقك الله.",
+
+    supervisorTitle: "طلابك اليوم",
+    supervisorBody: "يُسمّع اليوم: {names}",
+
+    examSoonTitle: "اختبارك بعد ثلاثة أيام",
+    examTodayTitle: "اختبارك اليوم",
+    examAt: "{title} — على الساعة {time}",
+    examPlace: "{title} — {place}",
   },
 
   // ── الإدارة (المرحلة ٤) ──
@@ -192,6 +238,11 @@ export const strings = {
     weeksLabel: "الأسابيع",
     weekAdd: "إضافة أسبوع",
     weekRemove: "حذف آخر أسبوع",
+    cycleStartLabel: "بداية الدورة",
+    cycleStartHint: "منه تُحسب أرقام الأسابيع ويقوم التذكير الصباحي",
+    cycleStartMissing: "اضبط تاريخ البداية — بدونه لا يعمل التذكير الصباحي",
+    cycleStartSaved: "حُفظ تاريخ البداية",
+    errCycleStart: "تاريخ غير صحيح",
     errWeekHasData: "لا يمكن حذف الأسبوع الأخير — فيه تسجيلات محفوظة",
     errWeekBlocked: "تعذّر التغيير — طبّق ملف الترحيل 0004_cycles_write.sql في Supabase أولًا",
     errWeekRange: "عدد الأسابيع بين ١ و ٥٣",
@@ -279,10 +330,22 @@ export const strings = {
     audBoth: "الجميع",
     audHifz: "أعضاء الحفظ",
     audClub: "أعضاء النادي",
+    audHalaqa: "حلقة بعينها",
+    audMember: "عضو بعينه",
+    cHalaqa: "الحلقة المستهدَفة",
+    cMember: "العضو المستهدَف",
     cPublish: "نشر",
     cPublishing: "جارٍ النشر…",
     adPublished: "تم نشر الإعلان",
     reminderPublished: "تم نشر التذكير",
+    // عدد من وصلتهم الرسالة — بصيغ العربية الخمس، و{n} تُستبدل بالرقم
+    sentZero: "لم يصل أحدًا — لا عضو نشط في هذا الجمهور",
+    sentOne: "وصل إلى عضو واحد",
+    sentTwo: "وصل إلى عضوين",
+    sentFew: "وصل إلى {n} أعضاء",
+    sentMany: "وصل إلى {n} عضوًا",
+    errAudienceScope: "المشرف يراسل حلقته أو أحد طلابه فقط",
+    errTargetMissing: "اختر الحلقة أو العضو المستهدَف",
     uploading: "جارٍ رفع الصورة…",
     imageTooBig: "الصورة كبيرة جدًا (الحد ٥ ميغابايت)",
     removeImage: "إزالة الصورة",

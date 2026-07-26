@@ -128,6 +128,7 @@ export default async function ManagePage() {
             members={active}
             sessions={sessions}
             weekCount={cycle.week_count}
+            startDate={cycle.start_date}
             canEditWeeks={isAdmin}
           />
         )}
@@ -258,7 +259,15 @@ export default async function ManagePage() {
 
       {/* ── 05 · الإعلانات والتذكيرات ── */}
       <ManageSection id="content" n="05" title={m.navContent}>
-        <ContentForm />
+        <ContentForm
+          isAdmin={isAdmin}
+          halaqat={halaqaOpts}
+          // RLS تُسلّم للمشرف طلابه وحدهم أصلًا؛ نحذف نفسه فقط — لا أحد
+          // يُرسل رسالة خاصة إلى نفسه.
+          members={active
+            .filter((p) => p.id !== me.id)
+            .map((p) => ({ id: p.id, full_name: p.full_name }))}
+        />
       </ManageSection>
 
       {/* ── 06 · محرّر الصفحة الرئيسية (للمدير وحده) ── */}

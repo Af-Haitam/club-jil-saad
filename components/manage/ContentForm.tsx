@@ -11,11 +11,21 @@ import { strings } from "@/lib/strings";
 import type { ActionState } from "@/lib/validation/auth";
 
 type Kind = "ad" | "reminder";
+type Audience = "both" | "hifz" | "club" | "halaqa" | "member";
+
 const initialState: ActionState = {};
 
-export default function ContentForm() {
+export interface ContentFormProps {
+  /** المدير يخاطب أيّ جمهور؛ المشرف حلقته أو أحد طلابه فقط (تفرضه RLS أيضًا). */
+  isAdmin: boolean;
+  halaqat: { id: string; name: string }[];
+  members: { id: string; full_name: string }[];
+}
+
+export default function ContentForm({ isAdmin, halaqat, members }: ContentFormProps) {
   const [state, action] = useActionState(publishContent, initialState);
   const [kind, setKind] = useState<Kind>("ad");
+  const [audience, setAudience] = useState<Audience>(isAdmin ? "both" : "halaqa");
   const [imageUrl, setImageUrl] = useState<string>("");
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string>("");
@@ -83,11 +93,60 @@ export default function ContentForm() {
           />
         </div>
 
-        <SelectField id="audience_type" name="audience_type" label={m.cAudience} defaultValue="both" required>
-          <option value="both">{m.audBoth}</option>
-          <option value="hifz">{m.audHifz}</option>
-          <option value="club">{m.audClub}</option>
+        <SelectField
+          id="audience_type"
+          name="audience_type"
+          label={m.cAudience}
+          value={audience}
+          onChange={(e) => setAudience(e.target.value as Audience)}
+          required
+        >
+          {isAdmin && (
+            <>
+              <option value="both">{m.audBoth}</option>
+              <option value="hifz">{m.audHifz}</option>
+              <option value="club">{m.audClub}</option>
+            </>
+          )}
+          <option value="halaqa">{m.audHalaqa}</option>
+          <option value="member">{m.audMember}</option>
         </SelectField>
+
+        {audience === "halaqa" && (
+          <SelectField
+            id="halaqa_id"
+            name="halaqa_id"
+            label={m.cHalaqa}
+            defaultValue=""
+            error={state.fieldErrors?.halaqa_id}
+            required
+          >
+            <option value="">{strings.auth.choosePlaceholder}</option>
+            {halaqat.map((h) => (
+              <option key={h.id} value={h.id}>
+                {h.name}
+              </option>
+            ))}
+          </SelectField>
+        )}
+
+        {audience === "member" && (
+          <SelectField
+            id="member_id"
+            name="member_id"
+            label={m.cMember}
+            defaultValue=""
+            error={state.fieldErrors?.member_id}
+            required
+          >
+            <option value="">{strings.auth.choosePlaceholder}</option>
+            {members.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.full_name}
+              </option>
+            ))}
+          </SelectField>
+        )}
 
         {/* الصورة */}
         <div className="flex flex-col gap-2">

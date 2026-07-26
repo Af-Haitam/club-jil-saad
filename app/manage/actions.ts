@@ -5,6 +5,9 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getAdminProfile, getStaffProfile } from "@/lib/manage/queries";
 import { pushRoster } from "@/lib/manage/google-sheet";
+import { fanout } from "@/lib/notify/fanout";
+import { pushToUsers } from "@/lib/notify/push";
+import { recipientsLabel } from "@/lib/notify/recipients";
 import { allSections } from "@/lib/site-content";
 import type { SessionStatus } from "@/lib/types/database";
 import {
@@ -313,6 +316,47 @@ export async function setCycleWeeks(weeks: number): Promise<{ ok: boolean; error
   return { ok: true };
 }
 
+// ── تاريخ بدء الدورة ──
+// منه تُحسب أرقام الأسابيع، وعليه تقوم المهمّة اليومية كلّها: بلا تاريخ بدء
+// لا تعرف المهمّة أيّ أسبوع نحن فيه، فتمتنع عن فتح الحصص بدل أن تُخمّن.
+export async function setCycleStart(startDate: string): Promise<{ ok: boolean; error?: string }> {
+  const trimmed = typeof startDate === "string" ? startDate.trim() : "";
+  const value = trimmed === "" ? null : trimmed;
+
+  if (value !== null) {
+    // شكل صحيح وتاريخ موجود فعلًا — "2026-02-30" يمرّ من التعبير النمطي وحده.
+    const wellFormed = /^\d{4}-\d{2}-\d{2}$/.test(value);
+    const real = wellFormed && new Date(`${value}T00:00:00Z`).toISOString().slice(0, 10) === value;
+    if (!real) return { ok: false, error: strings.manage.errCycleStart };
+  }
+
+  const me = await getAdminProfile();
+  if (!me) return { ok: false, error: strings.manage.errAdminOnly };
+
+  const supabase = await createClient();
+  const { data: cycle } = await supabase
+    .from("program_cycles")
+    .select("id")
+    .eq("is_active", true)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!cycle) return { ok: false, error: strings.manage.noCycle };
+
+  const { data: updated, error } = await supabase
+    .from("program_cycles")
+    .update({ start_date: value })
+    .eq("id", (cycle as { id: string }).id)
+    .select("id");
+  if (error) return { ok: false, error: strings.auth.errGeneric };
+  // منع RLS صامت: لا خطأ، ولا صفّ تغيّر.
+  if (!updated || updated.length === 0) return { ok: false, error: strings.manage.errWeekBlocked };
+
+  revalidatePath("/manage");
+  revalidatePath("/dashboard");
+  return { ok: true };
+}
+
 // ── تلوين خانة في جدول التتبع: الحالة وحدها، بأقل قدر ممكن من العمل ──
 // upsert يحدّث الأعمدة المُرسَلة فقط، فالسورة والآية والملاحظة المسجّلة سابقًا تبقى.
 const CELL_STATUSES: SessionStatus[] = ["green", "red", "absent", "excused", "pending"];
@@ -477,22 +521,50 @@ export async function publishContent(_prev: ActionState, formData: FormData): Pr
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: strings.auth.errGeneric };
 
-  // RLS: is_admin() OR is_supervisor()
+  // RLS منذ 0005: المدير أيّ جمهور، والمشرف حلقته أو أحد طلابه فقط.
   const table = kind === "reminder" ? "reminders" : "announcements";
-  const { error } = await supabase.from(table).insert({
+  const { data: row, error } = await supabase
+    .from(table)
+    .insert({
+      title: v.title,
+      body: v.body,
+      image_url: v.image_url,
+      audience_type: v.audience_type,
+      halaqa_id: v.audience_type === "halaqa" ? v.halaqa_id : null,
+      member_id: v.audience_type === "member" ? v.member_id : null,
+      author_id: user.id,
+      published_at: new Date().toISOString(),
+    })
+    .select("id")
+    .single();
+
+  // انتهاك with_check يصل كخطأ 42501 — وهو حالة المشرف يحاول مخاطبة الجميع.
+  if (error || !row) {
+    const denied = error?.code === "42501";
+    return { ok: false, error: denied ? strings.manage.errAudienceScope : strings.auth.errGeneric };
+  }
+
+  // النشر وحده لا يُشعر أحدًا: هنا تُنسخ الرسالة إلى صندوق كل مستهدَف.
+  const { recipients, error: fanoutError } = await fanout(
+    supabase,
+    kind === "reminder" ? "reminder" : "announcement",
+    row.id,
+  );
+  if (fanoutError) return { ok: false, error: strings.manage.errAudienceScope };
+
+  await pushToUsers(recipients, {
     title: v.title,
-    body: v.body,
-    image_url: v.image_url,
-    audience_type: v.audience_type,
-    author_id: user.id,
-    published_at: new Date().toISOString(),
+    body: v.body ?? "",
+    url: "/dashboard/inbox",
   });
-  if (error) return { ok: false, error: strings.auth.errGeneric };
 
   revalidatePath("/dashboard");
+  revalidatePath("/dashboard/inbox");
   revalidatePath("/manage");
   return {
     ok: true,
-    notice: kind === "reminder" ? strings.manage.reminderPublished : strings.manage.adPublished,
+    notice: `${
+      kind === "reminder" ? strings.manage.reminderPublished : strings.manage.adPublished
+    } — ${recipientsLabel(recipients.length)}`,
   };
 }

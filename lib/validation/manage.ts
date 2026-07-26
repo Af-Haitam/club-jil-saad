@@ -91,9 +91,22 @@ export const memberSchema = z.object({
 export const halaqaEditSchema = halaqaSchema.extend({ id: z.string().min(1) });
 
 // ─── نشر إعلان/تذكير ───────────────────────────────────────────────────
-export const contentSchema = z.object({
-  title: z.string().trim().min(1, "أدخل العنوان"),
-  body: optText,
-  image_url: optText,
-  audience_type: z.enum(["both", "hifz", "club"], "اختر الجمهور"),
-});
+export const contentSchema = z
+  .object({
+    title: z.string().trim().min(1, "أدخل العنوان"),
+    body: optText,
+    image_url: optText,
+    audience_type: z.enum(["both", "hifz", "club", "halaqa", "member"], "اختر الجمهور"),
+    halaqa_id: optText,
+    member_id: optText,
+  })
+  // جمهورا «حلقة» و«عضو» بلا هدف يكسران قيد ann_halaqa_target في قاعدة
+  // البيانات — نمسكهما هنا لنُظهر الخطأ عند الحقل نفسه لا كخطأ عامّ.
+  .superRefine((v, ctx) => {
+    if (v.audience_type === "halaqa" && !v.halaqa_id) {
+      ctx.addIssue({ code: "custom", path: ["halaqa_id"], message: "اختر الحلقة" });
+    }
+    if (v.audience_type === "member" && !v.member_id) {
+      ctx.addIssue({ code: "custom", path: ["member_id"], message: "اختر العضو" });
+    }
+  });

@@ -153,10 +153,30 @@ export interface Reminder {
   created_at: string;
 }
 
+// نسخة المستخدم من الرسالة. تحمل عنوانها ونصّها بنفسها (0005) لأن رسائل
+// المهمّة اليومية لا مصدر لها في جدول آخر — فقراءة الصندوق استعلام واحد.
+export type NotificationKind = "announcement" | "reminder" | "system";
+
 export interface AppNotification {
   id: string;
   user_id: string;
+  kind: NotificationKind;
   announcement_id: string | null;
+  reminder_id: string | null;
+  title: string | null;
+  body: string | null;
+  url: string | null;
+  dedupe_key: string | null;
   read_at: string | null;
+  created_at: string;
+}
+
+export interface PushToken {
+  id: string;
+  user_id: string;
+  token: string; // endpoint الاشتراك — فريد
+  platform: PushPlatform;
+  keys: { p256dh: string; auth: string } | null;
+  last_used_at: string | null;
   created_at: string;
 }
