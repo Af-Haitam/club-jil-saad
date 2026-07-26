@@ -12,6 +12,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:allowBackup="true"
+        android:enableOnBackInvokedCallback="true"
         android:theme="@style/Theme.LauncherActivity">
 
         <!-- الوجه الآخر من ‎/.well-known/assetlinks.json: هذا يقول «أنا أخصّ
@@ -50,6 +51,11 @@
             <meta-data
                 android:name="android.support.customtabs.trusted.SCREEN_ORIENTATION"
                 android:value="portrait" />
+
+            <!-- الضغط المطوّل على الأيقونة يفتح الصندوق أو الجدول مباشرة -->
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
 
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

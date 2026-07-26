@@ -4,6 +4,15 @@
          ~12 حرفًا في قائمة التطبيقات، و«نادي الجيل الصاعد» يُقصّ. -->
     <string name="appName">الجيل الصاعد</string>
 
+    <!-- تسميات الاختصارات. القصيرة تظهر تحت الأيقونة الصغيرة ويقصّها النظام
+         بعد ~10 محارف، والطويلة في القائمة نفسها. -->
+    <string name="shortcutOverviewShort">المتابعة</string>
+    <string name="shortcutOverviewLong">متابعة حفظي</string>
+    <string name="shortcutInboxShort">الصندوق</string>
+    <string name="shortcutInboxLong">صندوق الإشعارات</string>
+    <string name="shortcutProfileShort">ملفي</string>
+    <string name="shortcutProfileLong">ملفي الشخصي</string>
+
     <string name="assetStatements">
         [{
           \"relation\": [\"delegate_permission/common.handle_all_urls\"],

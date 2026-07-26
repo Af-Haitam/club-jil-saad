@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  اختصارات الضغط المطوّل على الأيقونة. هي ما يجعل القشرة تبدو تطبيقًا لا
+  رابطًا: العضو يفتح صندوقه مباشرةً بدل أن يمرّ باللوحة.
+
+  الوجهة تُمرَّر في android:data لا في extra، لأنّ LauncherActivity يقرأ
+  getIntent().getData() أوّلًا ثمّ يسقط إلى بيانات النشاط.
+-->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="overview"
+        android:enabled="true"
+        android:icon="@drawable/shortcut_overview"
+        android:shortcutShortLabel="@string/shortcutOverviewShort"
+        android:shortcutLongLabel="@string/shortcutOverviewLong">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="app.vercel.club_jil_saad"
+            android:targetClass="com.google.androidbrowserhelper.trusted.LauncherActivity"
+            android:data="https://club-jil-saad.vercel.app/dashboard" />
+        <categories android:name="android.shortcut.conversation" />
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="inbox"
+        android:enabled="true"
+        android:icon="@drawable/shortcut_inbox"
+        android:shortcutShortLabel="@string/shortcutInboxShort"
+        android:shortcutLongLabel="@string/shortcutInboxLong">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="app.vercel.club_jil_saad"
+            android:targetClass="com.google.androidbrowserhelper.trusted.LauncherActivity"
+            android:data="https://club-jil-saad.vercel.app/dashboard/inbox" />
+        <categories android:name="android.shortcut.conversation" />
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="profile"
+        android:enabled="true"
+        android:icon="@drawable/shortcut_profile"
+        android:shortcutShortLabel="@string/shortcutProfileShort"
+        android:shortcutLongLabel="@string/shortcutProfileLong">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="app.vercel.club_jil_saad"
+            android:targetClass="com.google.androidbrowserhelper.trusted.LauncherActivity"
+            android:data="https://club-jil-saad.vercel.app/dashboard/profile" />
+        <categories android:name="android.shortcut.conversation" />
+    </shortcut>
+</shortcuts>

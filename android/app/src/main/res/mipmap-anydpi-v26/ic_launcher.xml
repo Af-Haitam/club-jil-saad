@@ -2,4 +2,8 @@
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
     <background android:drawable="@color/backgroundColor" />
     <foreground android:drawable="@drawable/ic_launcher_foreground" />
+    <!-- أندرويد 13 فما فوق: حين يختار المستخدم أيقوناتٍ موحّدة اللون يلوّن
+         النظام هذه الطبقة بلون خلفيته. بدونها تبقى أيقونة النادي وحدها
+         ملوّنةً وسط شاشةٍ متجانسة، فتبدو دخيلة. -->
+    <monochrome android:drawable="@drawable/ic_launcher_monochrome" />
 </adaptive-icon>

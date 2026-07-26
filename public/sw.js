@@ -3,13 +3,45 @@
 // ملف عاديّ في public/ لا يمرّ ببناء Next: عامل الخدمة يجب أن يُخدَم من جذر
 // الموقع (/sw.js) ليملك نطاق "/" كلّه، وهو شرط استقبال الدفع في كل صفحة.
 
-self.addEventListener("install", () => {
+// صفحة انقطاع الاتصال وحدها هي ما يُخزَّن. لا تُخزَّن أيّ صفحة حقيقية عمدًا:
+// الجدول والصندوق يتغيّران، وصفحةٌ قديمة تُعرض على أنّها الحقيقة أسوأ من
+// رسالة انقطاع.
+const OFFLINE_CACHE = "club-offline-v1";
+const OFFLINE_ASSETS = ["/offline.html", "/assets/logo-mark.svg"];
+
+self.addEventListener("install", (event) => {
+  event.waitUntil(caches.open(OFFLINE_CACHE).then((cache) => cache.addAll(OFFLINE_ASSETS)));
   // نسخة جديدة تحلّ محلّ القديمة فورًا بدل انتظار إغلاق كل التبويبات.
   self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(
+    (async () => {
+      const names = await caches.keys();
+      await Promise.all(names.filter((n) => n !== OFFLINE_CACHE).map((n) => caches.delete(n)));
+      await self.clients.claim();
+    })(),
+  );
+});
+
+// بلا هذا المستمع يعرض التطبيق صفحة خطأ كروم حين ينقطع الاتصال — بديناصورها.
+// الشرط `navigate` مقصود: لا يمسّ هذا المستمع صورةً ولا طلب بيانات، فلا
+// يستطيع أن يُقدّم محتوى قديمًا. الشبكة أوّلًا دائمًا، والمخزَّن عند فشلها فقط.
+self.addEventListener("fetch", (event) => {
+  if (event.request.mode !== "navigate") return;
+
+  event.respondWith(
+    (async () => {
+      try {
+        return await fetch(event.request);
+      } catch {
+        const cache = await caches.open(OFFLINE_CACHE);
+        const offline = await cache.match("/offline.html");
+        return offline || Response.error();
+      }
+    })(),
+  );
 });
 
 self.addEventListener("push", (event) => {

@@ -1,0 +1,82 @@
+<!doctype html>
+<html dir="rtl" lang="ar">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>لا اتصال — نادي الجيل الصاعد</title>
+    <!--
+      الصفحة التي يراها العضو حين ينقطع الاتصال. تُخزَّن في عامل الخدمة، فلا
+      يجوز أن تطلب شيئًا من الشبكة: لا خطوط خارجية، ولا صور غير الشعار المخزَّن
+      معها. الخطّ خطّ النظام عمدًا — أيّ خطٍّ آخر لن يصل.
+    -->
+    <style>
+      :root {
+        --ink: #14100b;
+        --gold: #c9a227;
+        --gold-light: #e8c96a;
+        --parchment: #f4eddc;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100svh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1.5rem;
+        padding: 2rem 1.5rem;
+        background: var(--ink);
+        color: var(--parchment);
+        font-family: "Segoe UI", Tahoma, system-ui, -apple-system, sans-serif;
+        text-align: center;
+      }
+      img {
+        width: 56px;
+        height: auto;
+        opacity: 0.9;
+      }
+      h1 {
+        margin: 0;
+        font-size: 1.35rem;
+        font-weight: 600;
+        line-height: 1.9;
+        color: var(--gold-light);
+      }
+      p {
+        margin: 0;
+        max-width: 22rem;
+        font-size: 0.95rem;
+        line-height: 2;
+        color: rgba(244, 237, 220, 0.7);
+      }
+      button {
+        margin-top: 0.5rem;
+        padding: 0.75rem 2rem;
+        border: 0;
+        border-radius: 2px;
+        background: var(--gold);
+        color: var(--ink);
+        font-family: inherit;
+        font-size: 1rem;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      button:focus-visible {
+        outline: 2px solid var(--gold-light);
+        outline-offset: 3px;
+      }
+    </style>
+  </head>
+  <body>
+    <img src="/assets/logo-mark.svg" alt="شعار نادي الجيل الصاعد" />
+    <h1>لا يوجد اتصال بالإنترنت</h1>
+    <p>
+      تعذّر الوصول إلى النادي. تحقّق من اتصالك ثمّ أعِد المحاولة — ما حفظته محفوظ، ولن يضيع
+      منه شيء.
+    </p>
+    <button type="button" onclick="location.reload()">أعِد المحاولة</button>
+  </body>
+</html>

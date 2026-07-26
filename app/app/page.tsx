@@ -111,14 +111,28 @@ export default function AppPage() {
             <h3 className="font-display text-base text-gold-light">{a.warnHeading}</h3>
             <p className="mt-2 text-sm leading-7 text-parchment/60">{a.warnLead}</p>
 
+            {/* سامسونغ أوّلًا وبعرضٍ كامل: هي الوحيدة التي تُوقف الطريق تمامًا،
+                والوحيدة التي تُعالَج قبل التثبيت لا أثناءه. */}
+            <div className="mt-6">
+              <PhoneDialog
+                tag={a.warnSamsungTag}
+                blocking
+                text={a.warnSamsungTitle}
+                confirm={a.warnSamsungOk}
+                hint={a.warnSamsungHint}
+              />
+            </div>
+
             <div className="mt-6 grid gap-6 sm:grid-cols-2">
               <PhoneDialog
+                tag={a.warn1Tag}
                 text={a.warn1Title}
                 cancel={a.warn1Cancel}
                 confirm={a.warn1Ok}
                 hint={a.warn1Hint}
               />
               <PhoneDialog
+                tag={a.warn2Tag}
                 text={a.warn2Title}
                 cancel={a.warn2Cancel}
                 confirm={a.warn2Ok}
@@ -166,26 +180,41 @@ export default function AppPage() {
 /**
  * محاكاة حوار نظام أندرويد. رقٌّ فاتح على صفحةٍ حبرية — الغرض أن يُقرأ
  * كجسمٍ غريب عن الصفحة، لأنّه كذلك فعلًا: هذه واجهة الهاتف لا واجهة النادي.
+ *
+ * `cancel` اختياريّ لأنّ حوار سامسونغ يحمل زرًّا واحدًا فقط، وهذا **هو
+ * الفرق الذي يجب أن يُرى**: لا خيار فيه إلّا الخروج.
  */
 function PhoneDialog({
+  tag,
   text,
   cancel,
   confirm,
   hint,
+  blocking = false,
 }: {
+  tag: string;
   text: string;
-  cancel: string;
+  cancel?: string;
   confirm: string;
   hint: string;
+  /** حاجزٌ لا مخرج منه — يُعالَج قبل التثبيت، فيُميَّز بالبرتقالي. */
+  blocking?: boolean;
 }) {
   return (
     <figure className="m-0">
-      <div className="rounded-lg bg-parchment p-4 text-ink shadow-xl shadow-black/40">
+      <span
+        className={`inline-block rounded-sm px-2 py-0.5 text-[11px] tracking-wide ${
+          blocking ? "bg-tick-absent/20 text-tick-absent" : "bg-gold/10 text-gold/80"
+        }`}
+      >
+        {tag}
+      </span>
+      <div className="mt-2 rounded-lg bg-parchment p-4 text-ink shadow-xl shadow-black/40">
         <p className="text-[13px] leading-6">{text}</p>
         <div className="mt-4 flex justify-end gap-5 text-[13px] font-bold">
           {/* ‎/40 قياسًا كان 2.56:1 على الرقّ — تحت الحدّ المقروء. ‎/60 يعطي
               4.73:1 ويبقى باهتًا بجانب زرّ الإجراء، وهو المطلوب. */}
-          <span className="text-ink/60">{cancel}</span>
+          {cancel && <span className="text-ink/60">{cancel}</span>}
           <span className="text-navy">{confirm}</span>
         </div>
       </div>

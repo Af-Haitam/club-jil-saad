@@ -28,6 +28,6 @@ export const config = {
     // does so **without any session**. Handing it a Set-Cookie is at best
     // noise; the file must answer as plain, cacheable JSON or the app opens
     // with a browser address bar across the top.
-    "/((?!_next/static|_next/image|favicon\\.ico|icon\\.svg|sw\\.js|manifest\\.webmanifest|icon-\\d+\\.png|api/cron|assets/|\\.well-known/|sitemap\\.xml|robots\\.txt|$).*)",
+    "/((?!_next/static|_next/image|favicon\\.ico|icon\\.svg|sw\\.js|offline\\.html|manifest\\.webmanifest|icon-\\d+\\.png|api/cron|assets/|\\.well-known/|sitemap\\.xml|robots\\.txt|$).*)",
   ],
 };
