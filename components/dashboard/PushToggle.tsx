@@ -3,6 +3,7 @@
 // تفعيل تنبيهات الجهاز. المكوّن الوحيد في المرحلة ٧ الذي يحتاج جافاسكريبت
 // في المتصفح فعلًا: الاشتراك في الدفع لا يتمّ إلّا من المتصفح نفسه.
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 
 import {
   saveSubscription,
@@ -189,6 +190,15 @@ export default function PushToggle({ vapidPublicKey }: { vapidPublicKey: string 
           <p className="mt-1.5 text-sm leading-7 text-parchment/70">{d.pushIosBody}</p>
         </div>
       )}
+
+      {/* أضمن طريقٍ للتنبيهات هو التطبيق نفسه: أيقونةٌ في الشاشة تُفتح، بخلاف
+          موقعٍ يُنسى في قائمة العلامات. */}
+      <Link
+        href="/app"
+        className="mt-4 inline-block text-sm text-parchment/55 underline underline-offset-4 transition-colors hover:text-gold"
+      >
+        {strings.app.fromInbox}
+      </Link>
     </section>
   );
 }

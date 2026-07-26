@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "club-jil-saad",
+      "runtimeExecutable": "C:\\Users\\HP\\CLAUDE~3\\CLUBJI~1\\web\\node_modules\\.bin\\next.cmd",
+      "runtimeArgs": ["dev"],
+      "port": 3000
+    }
+  ]
+}

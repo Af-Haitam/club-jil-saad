@@ -58,6 +58,12 @@ export default function Navbar() {
 
           <div className="flex items-center gap-3">
             <Link
+              href="/app"
+              className="hidden md:inline-block text-sm text-parchment/80 hover:text-gold transition-colors duration-300"
+            >
+              {strings.app.navLink}
+            </Link>
+            <Link
               href="/login"
               className="hidden md:inline-block text-sm text-parchment/80 hover:text-gold transition-colors duration-300"
             >
@@ -109,6 +115,15 @@ export default function Navbar() {
                 </a>
               </li>
             ))}
+            <li>
+              <Link
+                href="/app"
+                onClick={() => setOpen(false)}
+                className="block py-1 text-parchment/85 hover:text-gold transition-colors"
+              >
+                {strings.app.navLink}
+              </Link>
+            </li>
             <li>
               <Link
                 href="/login"
