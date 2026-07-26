@@ -59,6 +59,12 @@ android {
 }
 
 dependencies {
+    // كوتلن 1.8 دمجت kotlin-stdlib-jdk7/jdk8 داخل kotlin-stdlib، لكنّ
+    // androidbrowserhelper ما زال يجرّ النسختين القديمتين (1.6.21) بينما
+    // appcompat يجرّ 1.8.22 — فتتكرّر الأصناف ويفشل checkDuplicateClasses.
+    // هذه القائمة توحّد إصدارات كوتلن كلّها، فتصير القديمتان غلافين فارغين.
+    implementation platform('org.jetbrains.kotlin:kotlin-bom:1.8.22')
+
     implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.5.0'
 
     // صريحة عمدًا: androidbrowserhelper لا يجرّها معه، و‏LauncherActivity
