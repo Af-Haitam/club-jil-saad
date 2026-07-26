@@ -41,9 +41,6 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.10.2"
-          # الخطوات التي تعمل بـ run تبدأ في android/ (defaults أعلاه)، أمّا
-          # هذه الخطوة فتعمل من جذر المستودع — فتُدلّ على المشروع صراحةً.
-          build-root-directory: android
 
       - name: فكّ مفتاح التوقيع
         env:
