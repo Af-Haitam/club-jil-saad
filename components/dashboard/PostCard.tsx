@@ -5,17 +5,18 @@ import { formatDate } from "@/lib/dashboard/hifz";
 /**
  * بطاقة منشور — إعلان أو تذكير أو رسالة من النادي.
  *
- * الصورة تملأ عرض البطاقة إلى حوافّها (لذلك overflow-hidden على الحاوية:
- * هي ما يقصّ الصورة عند الزوايا الدائرية)، ثم تهبط إلى لوح الحبر فيبدأ
- * النصّ. الترتيب مقصود: الصورة أوّلًا لأنها ما يوقف العين، ثم التاريخ
- * سطرًا ذهبيًّا صغيرًا، ثم العنوان بالخطّ الكوفي.
+ * الفكرة: زجاجٌ ذهبيّ فوق ماء. الصورة تملأ أعلى البطاقة حادّةً، ثم يهبط
+ * عليها لوحٌ شفيف يحمل النصّ — و**اللوح يستمدّ لونه من الصورة نفسها**: نسخة
+ * ممدودة منها تقف خلفه، وbackdrop-blur يميّعها. فلكلّ إعلانٍ زجاجُه: صورة
+ * غروبٍ تصبغ اللوح بالبرتقالي، وصورة سماءٍ تصبغه بالأزرق، بلا سطر إضافي.
  *
- * النسبة 3:2 لا 16:9، وهي مقيسة على صور النادي الفعلية: وجدناها 4:3 و3:2
- * (كاميرات الهواتف)، فصندوق 16:9 كان يترك شريطَي حبرٍ بعرض ٤٢ بكسل على
- * الجانبين — أي أن الصورة لا تلامس حافّة البطاقة أصلًا، وهو نقيض المطلوب.
- * 3:2 وسطٌ يملأ العرض دائمًا وأقصى قصٍّ فيه نحو السدس.
+ * `isolate` ليس زينة: هو ما يحصر ما يلتقطه الضبابُ داخل البطاقة، وإلّا
+ * التقط الصفحة من خلفها.
  *
- * والنسبة ثابتة (لا `h-auto`) كي لا يقفز ما تحتها حين تصل الصورة.
+ * الصورة الحادّة بنسبة 3:2 و`object-cover`، وهي مقيسة على صور النادي
+ * الفعلية (4:3 و3:2 من كاميرات الهواتف): صندوق 16:9 كان يترك شريطَي حبرٍ
+ * على الجانبين فلا تلامس الصورة الحافّة. والنسبة ثابتة كي لا يقفز ما تحتها
+ * حين تصل الصورة.
  */
 export default function PostCard({
   title,
@@ -36,37 +37,64 @@ export default function PostCard({
 }) {
   return (
     <article
-      className={`overflow-hidden rounded-2xl border bg-ink-soft/40 ${
-        accent ? "border-ink-line border-s-2 border-s-gold" : "border-ink-line"
+      className={`relative isolate overflow-hidden rounded-2xl border bg-ink-soft/50 shadow-lg shadow-black/40 ${
+        accent ? "border-gold/30 border-s-2 border-s-gold" : "border-gold/20"
       }`}
     >
       {imageUrl && (
-        // أبعاد الصور غير معروفة مسبقًا (رفع المدير)، فلا تصلح next/image بلا fill
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={imageUrl}
-          alt=""
-          loading="lazy"
-          className="aspect-3/2 w-full bg-ink object-cover"
-        />
+        <>
+          {/* الماء: نسخة ممدودة من الصورة تقف خلف اللوح ليلتقط لونها */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={imageUrl}
+            alt=""
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 size-full scale-125 object-cover opacity-80 saturate-150"
+          />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={imageUrl}
+            alt=""
+            loading="lazy"
+            className="relative aspect-3/2 w-full object-cover"
+          />
+        </>
       )}
 
-      <div className="p-5 sm:p-6">
+      <div
+        className={`relative p-5 backdrop-blur-xl sm:p-6 ${
+          imageUrl
+            ? // 75% لا 70%: خلف الزجاج قد تقف سماءٌ بيضاء، وعندها يهبط تباين
+              // السطر الذهبي الصغير تحت الحدّ المقروء. هذه النسبة تُبقي الماء
+              // ظاهرًا وتُنجّي أصغر نصّ في البطاقة.
+              "bg-ink/75"
+            : // بلا صورة لا ماء يُرى، فالذهب نفسه هو ما يلوّن الزجاج
+              "bg-linear-to-b from-gold/12 to-ink-soft/40"
+        }`}
+      >
+        {/* لمعة على حافّة الزجاج العليا — الضوء يقع على الحرف، لا على السطح */}
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-l from-transparent via-gold/45 to-transparent"
+        />
+
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           {date && (
-            <time dateTime={date} className="text-xs tracking-widest text-gold/75">
+            // ذهبٌ فاتح لا غامق: الغامق يسقط تحت الحدّ المقروء فوق صورة
+            // ساطعة. التسلسل البصري يقوم على الحجم والتباعد، لا على اللون.
+            <time dateTime={date} className="text-xs tracking-widest text-gold-light">
               {formatDate(date)}
             </time>
           )}
           {chips && <div className="ms-auto flex flex-wrap items-center gap-2">{chips}</div>}
         </div>
 
-        <h3 className="mt-3 font-display text-lg leading-[1.7] text-gold-light sm:text-xl">
+        <h3 className="mt-3 font-logo text-xl leading-[1.75] text-gold-light sm:text-2xl">
           {title}
         </h3>
 
         {body && (
-          <p className="mt-2 whitespace-pre-line text-sm leading-8 text-parchment/75">{body}</p>
+          <p className="mt-1.5 whitespace-pre-line text-sm leading-8 text-parchment/80">{body}</p>
         )}
       </div>
     </article>

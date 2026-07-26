@@ -23,7 +23,14 @@ export default async function DashboardLayout({ children }: { children: ReactNod
     <div className="min-h-svh bg-ink text-parchment">
       <header className="sticky top-0 z-40 border-b border-ink-line bg-ink/90 backdrop-blur-md">
         <div className="mx-auto flex max-w-4xl items-center justify-between gap-4 px-5 py-3">
-          <Link href="/dashboard" className="flex items-center gap-2.5">
+          {/* الشعار يعود إلى الصفحة الرئيسية لا إلى اللوحة — على الهاتف
+              خصوصًا لم يكن ثمّة طريق للخروج من اللوحة إلى الموقع العلني.
+              و«المتابعة» في الشريط تكفي للعودة إلى اللوحة نفسها. */}
+          <Link
+            href="/"
+            aria-label={d.homeFromDashboard}
+            className="flex items-center gap-2.5 rounded-sm transition-opacity hover:opacity-85"
+          >
             <Image
               src="/assets/logo-mark.svg"
               alt={strings.logoAlt}
