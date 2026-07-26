@@ -20,10 +20,13 @@ export default async function DashboardPage() {
     <div className="flex flex-col gap-6">
       <PositionCard progress={data.progress} surahs={data.surahs} />
       <WeeklyGrid cycle={data.cycle} sessions={data.sessions} surahs={data.surahs} />
+      {/* الاختبار بطاقة عدّاد صغيرة، فتبقى بنصف العرض على الشاشات الواسعة.
+          الإعلانات خرجت من الشبكة: البطاقة صارت ملصقًا بصورة، والملصق يحتاج
+          العرض كاملًا. */}
       <div className="grid gap-6 md:grid-cols-2">
         <ExamCard exam={data.exam} surahs={data.surahs} />
-        <Announcements items={data.announcements} />
       </div>
+      <Announcements items={data.announcements} />
       <Reminders items={data.reminders} />
     </div>
   );
