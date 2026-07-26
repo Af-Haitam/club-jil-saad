@@ -1,0 +1,63 @@
+plugins {
+    id 'com.android.application'
+}
+
+// اسم الحزمة مشتقّ من النطاق الذي يملكه النادي فعلًا
+// (club-jil-saad.vercel.app → app.vercel.club_jil_saad؛ الشرطات ممنوعة في
+// أسماء حزم جافا). **لا يُغيَّر أبدًا**: تغييره يجعل التطبيق تطبيقًا آخر،
+// فيبقى القديم على الهواتف ولا يُحدَّث.
+def appId = "app.vercel.club_jil_saad"
+def siteOrigin = "https://club-jil-saad.vercel.app"
+
+android {
+    namespace appId
+    compileSdk 35
+
+    defaultConfig {
+        applicationId appId
+        minSdk 21
+        targetSdk 35
+
+        // رقم البناء يأتي من رقم تشغيل GitHub Actions، فلا يتكرّر ولا يتناقص
+        // (أندرويد يرفض تثبيت نسخة برقمٍ أقلّ من المثبَّتة).
+        versionCode(System.getenv("VERSION_CODE") ? System.getenv("VERSION_CODE").toInteger() : 1)
+        versionName(System.getenv("VERSION_NAME") ?: "1.0.0")
+
+        resValue "string", "launchUrl", "${siteOrigin}/dashboard"
+        resValue "string", "hostName", "club-jil-saad.vercel.app"
+    }
+
+    signingConfigs {
+        release {
+            // المفتاح لا يعيش في المستودع. يأتي من أسرار GitHub Actions، ويُفكّ
+            // إلى ملفٍ مؤقّت داخل المُشغِّل. بناءٌ محلّي بلا هذه المتغيّرات
+            // ينتج APK غير موقَّع — وهو ما نريده: لا مفتاح، لا توقيع.
+            def storePath = System.getenv("ANDROID_KEYSTORE_PATH")
+            if (storePath) {
+                storeFile file(storePath)
+                storeType "PKCS12"
+                storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                keyAlias System.getenv("ANDROID_KEY_ALIAS")
+                keyPassword System.getenv("ANDROID_KEY_PASSWORD")
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            if (System.getenv("ANDROID_KEYSTORE_PATH")) {
+                signingConfig signingConfigs.release
+            }
+            minifyEnabled false
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.5.0'
+}

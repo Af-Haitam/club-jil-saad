@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- الاسم كما يظهر تحت الأيقونة. قصير عمدًا: أندرويد يقصّ ما تجاوز
+         ~12 حرفًا في قائمة التطبيقات، و«نادي الجيل الصاعد» يُقصّ. -->
+    <string name="appName">الجيل الصاعد</string>
+
+    <string name="assetStatements">
+        [{
+          \"relation\": [\"delegate_permission/common.handle_all_urls\"],
+          \"target\": {
+            \"namespace\": \"web\",
+            \"site\": \"https://club-jil-saad.vercel.app\"
+          }
+        }]
+    </string>
+</resources>

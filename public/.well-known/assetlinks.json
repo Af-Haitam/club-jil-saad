@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "app.vercel.club_jil_saad",
+      "sha256_cert_fingerprints": [
+        "AE:0E:4A:D5:C1:92:8C:AD:B3:CB:C9:F8:00:EF:EC:AE:D5:D9:65:82:D4:64:B1:E6:10:5B:71:3C:03:92:05:70"
+      ]
+    }
+  }
+]

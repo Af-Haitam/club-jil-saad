@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- نفس حبر الموقع (‎--color-ink‎) — شاشة الإقلاع تسبق تحميل الصفحة،
+         فإن اختلف اللون رأى العضو ومضةً بيضاء قبل الحبر. -->
+    <color name="backgroundColor">#14100B</color>
+</resources>

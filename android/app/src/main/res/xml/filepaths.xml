@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- ما يُنزّله العضو من داخل التطبيق (صورة إعلان مثلًا) يمرّ من هنا. -->
+    <files-path name="images" path="images/" />
+    <cache-path name="downloads" path="downloads/" />
+</paths>

@@ -22,6 +22,12 @@ export const config = {
     // icons — the browser refetches sw.js constantly and none of them carry a
     // session, so refreshing auth cookies on them is pure waste. And
     // /api/cron/*, which authenticates with CRON_SECRET, never a user session.
-    "/((?!_next/static|_next/image|favicon\\.ico|icon\\.svg|sw\\.js|manifest\\.webmanifest|icon-\\d+\\.png|api/cron|assets/|sitemap\\.xml|robots\\.txt|$).*)",
+    //
+    // ‎/.well-known/ (Phase 8) is skipped for a sharper reason: Chrome fetches
+    // assetlinks.json to verify that the Android app owns this domain, and it
+    // does so **without any session**. Handing it a Set-Cookie is at best
+    // noise; the file must answer as plain, cacheable JSON or the app opens
+    // with a browser address bar across the top.
+    "/((?!_next/static|_next/image|favicon\\.ico|icon\\.svg|sw\\.js|manifest\\.webmanifest|icon-\\d+\\.png|api/cron|assets/|\\.well-known/|sitemap\\.xml|robots\\.txt|$).*)",
   ],
 };
