@@ -7,7 +7,7 @@ import { getAdminProfile, getStaffProfile } from "@/lib/manage/queries";
 import { pushRoster } from "@/lib/manage/google-sheet";
 import { fanout } from "@/lib/notify/fanout";
 import { pushToUsers } from "@/lib/notify/push";
-import { recipientsLabel } from "@/lib/notify/recipients";
+import { devicesLabel, recipientsLabel } from "@/lib/notify/recipients";
 import { allSections } from "@/lib/site-content";
 import type { SessionStatus } from "@/lib/types/database";
 import {
@@ -552,19 +552,21 @@ export async function publishContent(_prev: ActionState, formData: FormData): Pr
   );
   if (fanoutError) return { ok: false, error: strings.manage.errAudienceScope };
 
-  await pushToUsers(recipients, {
+  const push = await pushToUsers(recipients, {
     title: v.title,
     body: v.body ?? "",
     url: "/dashboard/inbox",
+    image: v.image_url,
   });
 
-  revalidatePath("/dashboard");
-  revalidatePath("/dashboard/inbox");
+  revalidatePath("/dashboard", "layout");
   revalidatePath("/manage");
   return {
     ok: true,
+    // العدّان مقصودان: «وصل إلى» عدد الصناديق، و«دُفع إلى» عدد الهواتف التي
+    // اهتزّت فعلًا. الأوّل يكاد لا يفشل، والثاني يفشل بصمت لولا أن يُقال.
     notice: `${
       kind === "reminder" ? strings.manage.reminderPublished : strings.manage.adPublished
-    } — ${recipientsLabel(recipients.length)}`,
+    } — ${recipientsLabel(recipients.length)} · ${devicesLabel(push.sent)}`,
   };
 }

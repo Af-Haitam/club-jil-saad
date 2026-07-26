@@ -4,7 +4,11 @@
 // في المتصفح فعلًا: الاشتراك في الدفع لا يتمّ إلّا من المتصفح نفسه.
 import { useCallback, useEffect, useState } from "react";
 
-import { saveSubscription, removeSubscription } from "@/app/dashboard/inbox/actions";
+import {
+  saveSubscription,
+  removeSubscription,
+  isMySubscription,
+} from "@/app/dashboard/inbox/actions";
 import { strings } from "@/lib/strings";
 
 type State = "checking" | "unsupported" | "off" | "on" | "busy" | "denied" | "failed";
@@ -58,7 +62,13 @@ export default function PushToggle({ vapidPublicKey }: { vapidPublicKey: string 
       try {
         const registration = await navigator.serviceWorker.register("/sw.js");
         const existing = await registration.pushManager.getSubscription();
-        return { state: existing ? "on" : "off", needsInstall };
+        if (!existing) return { state: "off", needsInstall };
+
+        // وجود اشتراك في المتصفح لا يعني أنه اشتراكي: الاشتراك يخصّ الجهاز
+        // لا الحساب. نسأل الخادم إن كان مسجّلًا باسمي، وإلّا فالزرّ «مطفأ»
+        // وضغطُه ينتزع الجهاز باسمي.
+        const mine = await isMySubscription(existing.endpoint);
+        return { state: mine ? "on" : "off", needsInstall };
       } catch {
         return { state: "off", needsInstall };
       }

@@ -16,3 +16,15 @@ export function recipientsLabel(count: number): string {
   const template = lastTwo >= 3 && lastTwo <= 10 ? m.sentFew : m.sentMany;
   return template.replace("{n}", String(count));
 }
+
+/** كم جهازًا اهتزّ فعلًا — نفس قواعد العدد. */
+export function devicesLabel(count: number): string {
+  const m = strings.manage;
+  if (count <= 0) return m.devicesZero;
+  if (count === 1) return m.devicesOne;
+  if (count === 2) return m.devicesTwo;
+
+  const lastTwo = count % 100;
+  const template = lastTwo >= 3 && lastTwo <= 10 ? m.devicesFew : m.devicesMany;
+  return template.replace("{n}", String(count));
+}

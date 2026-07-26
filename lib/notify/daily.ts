@@ -236,24 +236,38 @@ export async function runDailyJob(): Promise<DailyReport> {
   // وهذا ليس تجميلًا للتقرير: **الدفع يُبنى من الصفوف المكتوبة وحدها**. لو
   // بنيناه من قائمة النوايا لاستيقظ العضو على تذكيرين حين يُعيد Vercel
   // تشغيل المهمّة — الصندوق محميّ بالفهرس الفريد، أمّا الهاتف فلا يحميه شيء.
-  let written: { user_id: string; title: string; body: string; url: string }[] = [];
+  type WrittenNotice = PendingNotice & { dedupe_key: string };
+  let written: WrittenNotice[] = [];
   if (notices.length > 0) {
     const { data } = await supabase
       .from("notifications")
       .upsert(notices, { onConflict: "user_id,dedupe_key", ignoreDuplicates: true })
-      .select("user_id, title, body, url");
-    written = (data ?? []) as typeof written;
+      .select("user_id, kind, title, body, url, dedupe_key");
+    written = (data ?? []) as WrittenNotice[];
     report.noticesWritten = written.length;
   }
 
   // الدفع يُجمَّع حسب نصّ الرسالة: نداء واحد لكل مجموعة تتلقّى النصّ نفسه.
-  const groups = new Map<string, { title: string; body: string; url: string; users: string[] }>();
+  //
+  // والوسم هو بادئة مفتاح عدم التكرار بلا تاريخ (`session` لا
+  // `session:2026-07-26`)، فتذكيرُ اليوم يحلّ محلّ تذكير أمس على شاشة القفل
+  // بدل أن يتراكم فوقه — وهو السلوك الصحيح لتذكيرٍ يتكرّر كلّ أسبوع.
+  interface Group {
+    title: string;
+    body: string;
+    url: string;
+    tag: string;
+    users: string[];
+  }
+  const groups = new Map<string, Group>();
   for (const notice of written) {
-    const key = `${notice.title} ${notice.body} ${notice.url}`;
+    const tag = notice.dedupe_key.split(":")[0];
+    const key = `${tag}|${notice.title}|${notice.body}|${notice.url}`;
     const group = groups.get(key) ?? {
       title: notice.title,
       body: notice.body,
       url: notice.url,
+      tag,
       users: [],
     };
     group.users.push(notice.user_id);
@@ -265,6 +279,7 @@ export async function runDailyJob(): Promise<DailyReport> {
       title: group.title,
       body: group.body,
       url: group.url,
+      tag: group.tag,
     });
     report.pushSent += outcome.sent;
     report.pushPruned += outcome.pruned;

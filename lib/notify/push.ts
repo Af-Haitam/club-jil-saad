@@ -11,6 +11,10 @@ export interface PushPayload {
   title: string;
   body: string;
   url: string;
+  /** صورة الإعلان — تظهر كصورة كبيرة داخل التنبيه على أندرويد. */
+  image?: string | null;
+  /** يجعل التنبيه يحلّ محلّ سابقه بدل أن يتراكم معه (تذكير الحصّة اليومي). */
+  tag?: string;
 }
 
 // حدّ حمولة Web Push نحو ٤ كيلوبايت، والنصّ الطويل لا يُعرض كاملًا في
@@ -78,6 +82,10 @@ export async function pushToUsers(
       title: payload.title,
       body: payload.body.slice(0, MAX_BODY),
       url: payload.url,
+      // الحمولة محدودة بنحو ٤ كيلوبايت، فنرسل **رابط** الصورة لا الصورة —
+      // عامل الخدمة هو من يجلبها عند العرض.
+      image: payload.image ?? undefined,
+      tag: payload.tag,
     });
 
     const results = await Promise.allSettled(

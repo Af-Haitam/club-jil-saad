@@ -165,6 +165,7 @@ export interface AppNotification {
   reminder_id: string | null;
   title: string | null;
   body: string | null;
+  image_url: string | null;
   url: string | null;
   dedupe_key: string | null;
   read_at: string | null;

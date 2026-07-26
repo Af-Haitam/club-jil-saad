@@ -58,6 +58,17 @@ export default function InboxList({ items }: { items: AppNotification[] }) {
                 {n.body}
               </p>
             )}
+            {n.image_url && (
+              // صور المحتوى تأتي من دلو Supabase بأبعاد غير معروفة مسبقًا،
+              // فـ next/image بلا fill أو أبعاد لا يصلح هنا.
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={n.image_url}
+                alt=""
+                loading="lazy"
+                className="mt-3 max-h-72 w-full rounded-md border border-ink-line object-cover"
+              />
+            )}
           </li>
         );
       })}
