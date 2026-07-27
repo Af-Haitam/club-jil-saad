@@ -42,3 +42,9 @@ next-env.d.ts
 
 .vercel
 .env*
+
+# تطبيق الجوال (Expo) — يُبنى على GitHub Actions لا على Vercel
+mobile/node_modules
+mobile/.expo
+mobile/android
+mobile/ios

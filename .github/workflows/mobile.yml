@@ -1,0 +1,115 @@
+# بناء تطبيق الأعضاء (Expo / React Native) وتوقيعه.
+#
+# لا حساب EAS ولا اشتراك: `expo prebuild` يولّد مشروع أندرويد، وGradle على
+# مُشغِّل GitHub يبنيه — والمُشغِّل يحمل JDK وAndroid SDK جاهزين.
+#
+# يوقَّع **بنفس مفتاح قشرة TWA وباسم الحزمة نفسه**، فيصل إلى من ثبّت القشرة
+# تحديثًا في مكانها لا تطبيقًا ثانيًا بجانبها.
+
+name: بناء تطبيق الأعضاء
+
+on:
+  workflow_dispatch:
+    inputs:
+      versionName:
+        description: "رقم الإصدار الظاهر (مثال 2.0.0)"
+        required: true
+        default: "2.0.0"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: "platforms;android-35 build-tools;35.0.0"
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: تركيب الحزم
+        run: npm ci
+
+      - name: توليد مشروع أندرويد
+        env:
+          VERSION_CODE: ${{ github.run_number }}
+          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+        run: npx expo prebuild --platform android --no-install
+
+      - name: فكّ مفتاح التوقيع
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::السرّ ANDROID_KEYSTORE_BASE64 غير مضبوط."
+            exit 1
+          fi
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/signing.p12"
+
+      - name: البناء
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/signing.p12
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          # يُخبز في حزمة الجافاسكريبت، فيلزم هنا أيضًا لا في التوليد وحده
+          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+        run: |
+          cd android
+          ./gradlew --no-daemon assembleRelease
+
+      - name: التحقّق من التوقيع والهوية
+        run: |
+          set -euo pipefail
+          APK=$(ls android/app/build/outputs/apk/release/*.apk | head -1)
+          SIGNER="$ANDROID_HOME/build-tools/35.0.0/apksigner"
+
+          echo "── التوقيع ──"
+          "$SIGNER" verify --print-certs "$APK"
+
+          ACTUAL=$("$SIGNER" verify --print-certs "$APK" \
+            | grep -im1 'SHA-256 digest' | awk '{print $NF}' | tr 'A-Z' 'a-z')
+          EXPECTED=$(python3 -c "import json;print(json.load(open('../public/.well-known/assetlinks.json'))[0]['target']['sha256_cert_fingerprints'][0].replace(':','').lower())")
+
+          # نفس المفتاح تمامًا، وإلّا لم يكن تحديثًا لما ثبّته الأعضاء بل
+          # تطبيقًا غريبًا يرفض أندرويد تركيبه مكانه.
+          if [ "$ACTUAL" != "$EXPECTED" ]; then
+            echo "::error::وُقّع بمفتاح غير مفتاح النادي — لن يُثبَّت فوق النسخة الحالية."
+            echo "apk=$ACTUAL  expected=$EXPECTED"
+            exit 1
+          fi
+          echo "المفتاح مطابق ✓"
+
+          echo "── بطاقة التطبيق ──"
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" \
+            | grep -E "^(package|sdkVersion|targetSdkVersion|uses-permission)" \
+            || true
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" \
+            | grep -m1 "application-label:"
+
+          cp "$APK" "$RUNNER_TEMP/club-jil-saad.apk"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apk
+          path: ${{ runner.temp }}/club-jil-saad.apk
+          if-no-files-found: error

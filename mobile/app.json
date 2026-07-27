@@ -1,0 +1,54 @@
+{
+  "expo": {
+    "name": "الجيل الصاعد",
+    "slug": "club-jil-saad",
+    "version": "2.0.0",
+    "orientation": "portrait",
+    "scheme": "clubjilsaad",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#14100B",
+    "newArchEnabled": true,
+    "android": {
+      "package": "app.vercel.club_jil_saad",
+      "versionCode": 100,
+      "adaptiveIcon": {
+        "backgroundColor": "#14100B",
+        "foregroundImage": "./assets/adaptive-foreground.png",
+        "monochromeImage": "./assets/adaptive-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": true,
+      "permissions": ["android.permission.POST_NOTIFICATIONS"]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      [
+        "expo-localization",
+        {
+          "supportsRTL": true,
+          "forcesRTL": true
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash.png",
+          "backgroundColor": "#14100B",
+          "imageWidth": 180
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#C9A227"
+        }
+      ],
+      "./plugins/withReleaseSigning"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
