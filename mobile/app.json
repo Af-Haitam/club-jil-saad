@@ -48,7 +48,8 @@
           "color": "#C9A227"
         }
       ],
-      "./plugins/withReleaseSigning"
+      "./plugins/withReleaseSigning",
+      "./plugins/withRealPhoneAbis"
     ],
     "experiments": {
       "typedRoutes": true
