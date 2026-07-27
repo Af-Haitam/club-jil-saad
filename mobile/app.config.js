@@ -11,29 +11,38 @@ const fs = require("fs");
 const path = require("path");
 
 const beta = process.env.APP_VARIANT === "beta";
-const GOOGLE_SERVICES = path.join(__dirname, "google-services.json");
 
 /**
- * هل يعرف ملفّ Firebase اسم الحزمة التي نبنيها؟
+ * أيّ ملفّ Firebase يوافق الحزمة التي نبنيها؟
  *
- * إضافة google-services إلى Gradle **تُفشل البناء** إذا لم تجد عميلًا
- * مطابقًا لاسم الحزمة — ونسخة التجربة تحمل لاحقة ‎.beta‎ لا تُسجَّل في
- * Firebase تلقائيًّا. فبدل أن ينهار بناءٌ يستغرق ثلاث عشرة دقيقة على سطرٍ
- * في ملفّ إعداد، نقرأ الملفّ هنا ونقرّر:
+ * ⚠️ **مشروعان منفصلان مؤقّتًا.** أُنشئ `club-jill-saed` للتطبيق و
+ * `club-jill-saed-beta` لنسخة التجربة. وملفّ google-services يخصّ مشروعًا
+ * واحدًا لا مشروعين، فلا يمكن دمجهما في ملفّ — لكلٍّ ملفّه.
+ *
+ * والأهمّ أنّ **الإرسال يخصّ مشروعًا أيضًا**: مفتاح حساب الخدمة يرسل إلى
+ * مشروعه وحده. فالخادم بمفتاحٍ واحد لا يبلغ التطبيقين. الوجهة الصحيحة
+ * مشروعٌ واحد يحمل الحزمتين — وحتى يُدمجا، هذا يبقيهما يبنيان.
+ *
+ * وإضافة google-services إلى Gradle **تُفشل البناء** إن لم تجد عميلًا
+ * مطابقًا لاسم الحزمة، فبدل أن ينهار بناءٌ يستغرق ثلاث عشرة دقيقة على سطرٍ
+ * في ملفّ إعداد، نقرأ الملفّات هنا ونقرّر:
  *
  *   مسجَّلة   → تُضاف، والتنبيهات تعمل
  *   غير مسجّلة → تُترك، والبناء ينجح والتنبيهات وحدها غائبة
  */
 function googleServicesFor(packageName) {
-  try {
-    const json = JSON.parse(fs.readFileSync(GOOGLE_SERVICES, "utf8"));
-    const known = (json.client ?? []).some(
-      (c) => c?.client_info?.android_client_info?.package_name === packageName,
-    );
-    return known ? "./google-services.json" : undefined;
-  } catch {
-    return undefined;
+  for (const file of ["google-services.json", "google-services.beta.json"]) {
+    try {
+      const json = JSON.parse(fs.readFileSync(path.join(__dirname, file), "utf8"));
+      const known = (json.client ?? []).some(
+        (c) => c?.client_info?.android_client_info?.package_name === packageName,
+      );
+      if (known) return `./${file}`;
+    } catch {
+      // ملفٌّ غير موجود أو تالف — نجرّب التالي.
+    }
   }
+  return undefined;
 }
 
 module.exports = ({ config }) => {

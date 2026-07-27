@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "442481179576",
+    "project_id": "club-jill-saed-beta",
+    "storage_bucket": "club-jill-saed-beta.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:442481179576:android:8859043e2f4e5ae8aced4d",
+        "android_client_info": {
+          "package_name": "app.vercel.club_jil_saad.beta"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCbZTrPfz7WGm00YxFGRTTruSeCnULPJyI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
