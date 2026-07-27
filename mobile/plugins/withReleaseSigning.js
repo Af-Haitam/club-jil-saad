@@ -18,6 +18,14 @@ const RELEASE_CONFIG = `
                 keyAlias System.getenv("ANDROID_KEY_ALIAS")
                 keyPassword System.getenv("ANDROID_KEY_PASSWORD")
             }
+            // AGP يُسقط توقيع v1 تلقائيًّا حين يكون minSdk 24 فما فوق، لأنّ
+            // v2 يكفي نظريًّا من أندرويد 7. وقشرة TWA — بـminSdk 21 — احتفظت
+            // به، وهي الفرق الوحيد ذو المعنى بين حزمةٍ رفض الهاتف تحليلها
+            // وحزمةٍ لم يرفضها. إبقاؤه لا يكلّف شيئًا وقت التشغيل، ويحذف
+            // متغيّرًا من المعادلة.
+            enableV1Signing true
+            enableV2Signing true
+            enableV3Signing true
         }`;
 
 module.exports = function withReleaseSigning(config) {
