@@ -15,6 +15,11 @@ on:
         description: "رقم الإصدار الظاهر (مثال 2.0.0)"
         required: true
         default: "2.0.0"
+      variant:
+        description: "نسخة التجربة تُثبَّت بجانب التطبيق لا مكانه"
+        type: choice
+        options: ["release", "beta"]
+        default: "beta"
 
 permissions:
   contents: read
@@ -50,6 +55,7 @@ jobs:
       - name: توليد مشروع أندرويد
         env:
           VERSION_CODE: ${{ github.run_number }}
+          APP_VARIANT: ${{ inputs.variant }}
           EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
           EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
         run: npx expo prebuild --platform android --no-install
@@ -73,6 +79,7 @@ jobs:
           # يُخبز في حزمة الجافاسكريبت، فيلزم هنا أيضًا لا في التوليد وحده
           EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
           EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+          APP_VARIANT: ${{ inputs.variant }}
         run: |
           cd android
           ./gradlew --no-daemon assembleRelease
@@ -106,10 +113,10 @@ jobs:
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" \
             | grep -m1 "application-label:"
 
-          cp "$APK" "$RUNNER_TEMP/club-jil-saad.apk"
+          cp "$APK" "$RUNNER_TEMP/club-jil-saad-${{ inputs.variant }}.apk"
 
       - uses: actions/upload-artifact@v4
         with:
           name: apk
-          path: ${{ runner.temp }}/club-jil-saad.apk
+          path: ${{ runner.temp }}/club-jil-saad-${{ inputs.variant }}.apk
           if-no-files-found: error
