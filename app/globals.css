@@ -110,3 +110,24 @@ html {
   background: var(--color-gold);
   color: var(--color-ink);
 }
+
+/* ── سلوك اللمس ──
+   تفاصيل صغيرة، لكنّ اجتماعها هو ما يفصل «صفحةً تُقرأ» عن «تطبيقٍ يُستعمل».
+   `manipulation` يُلغي انتظار النقرة المزدوجة (نحو 300ms قبل كل ضغطة)
+   ويُبقي التكبير بإصبعين، فلا يُضحّى بإمكانية الوصول من أجل السرعة. */
+html {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  overscroll-behavior-x: none;
+}
+
+/* الضغط المطوّل على زرّ يجب ألّا يُظهر مقبضَي تحديد النصّ. أمّا المحتوى —
+   نصّ إعلانٍ أو رقم هاتف — فيبقى قابلًا للتحديد والنسخ عمدًا. */
+nav,
+button,
+summary,
+label,
+[role="button"] {
+  -webkit-user-select: none;
+  user-select: none;
+}

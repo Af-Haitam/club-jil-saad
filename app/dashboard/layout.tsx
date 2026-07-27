@@ -6,6 +6,7 @@ import Image from "next/image";
 import { redirect } from "next/navigation";
 import { getProfile } from "@/lib/auth/user";
 import { getUnreadCount } from "@/lib/dashboard/inbox";
+import BottomNav from "@/components/dashboard/BottomNav";
 import { signOut } from "@/lib/auth/actions";
 import { strings } from "@/lib/strings";
 
@@ -21,7 +22,9 @@ export default async function DashboardLayout({ children }: { children: ReactNod
 
   return (
     <div className="min-h-svh bg-ink text-parchment">
-      <header className="sticky top-0 z-40 border-b border-ink-line bg-ink/90 backdrop-blur-md">
+      {/* حافّة الأمان العليا: مع viewport-fit=cover يمتدّ المحتوى تحت نتوء
+          الآيفون، فتُدفع الترويسة إلى أسفله. تساوي صفرًا على ما سواه. */}
+      <header className="sticky top-0 z-40 border-b border-ink-line bg-ink/90 pt-[env(safe-area-inset-top)] backdrop-blur-md">
         <div className="mx-auto flex max-w-4xl items-center justify-between gap-4 px-5 py-3">
           {/* الشعار يعود إلى الصفحة الرئيسية لا إلى اللوحة — على الهاتف
               خصوصًا لم يكن ثمّة طريق للخروج من اللوحة إلى الموقع العلني.
@@ -41,19 +44,27 @@ export default async function DashboardLayout({ children }: { children: ReactNod
             />
             <span className="gold-text font-logo text-lg leading-[1.8]">{strings.auth.brand}</span>
           </Link>
+          {/* على الهاتف لا يبقى في الترويسة إلّا الشعار والخروج — التنقّل كلّه
+              نزل إلى الشريط السفلي حيث يصله الإبهام. أربعة روابط نصّية
+              متلاصقة أعلى الشاشة هي أوضح علامةٍ على أنّ ما تنظر إليه موقع. */}
           <nav className="flex items-center gap-4 text-sm">
-            <InboxBell unread={unread} />
-            <Link href="/dashboard" className="text-parchment/80 transition-colors hover:text-gold">
-              {d.navOverview}
-            </Link>
-            <Link href="/dashboard/profile" className="text-parchment/80 transition-colors hover:text-gold">
-              {d.navProfile}
-            </Link>
-            {(profile.role === "admin" || profile.role === "supervisor") && (
-              <Link href="/manage" className="text-gold/90 transition-colors hover:text-gold">
-                {strings.manage.title}
+            <span className="hidden md:contents">
+              <InboxBell unread={unread} />
+              <Link href="/dashboard" className="text-parchment/80 transition-colors hover:text-gold">
+                {d.navOverview}
               </Link>
-            )}
+              <Link
+                href="/dashboard/profile"
+                className="text-parchment/80 transition-colors hover:text-gold"
+              >
+                {d.navProfile}
+              </Link>
+              {(profile.role === "admin" || profile.role === "supervisor") && (
+                <Link href="/manage" className="text-gold/90 transition-colors hover:text-gold">
+                  {strings.manage.title}
+                </Link>
+              )}
+            </span>
             <form action={signOut}>
               <button type="submit" className="text-parchment/60 transition-colors hover:text-gold">
                 {d.signOut}
@@ -63,12 +74,20 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         </div>
       </header>
 
-      <main className="mx-auto max-w-4xl px-5 py-8">
+      {/* الشريط 60px هنا، لكنّه يصير نحو 94px على هاتفٍ بشريط إيماءاتٍ سفلي
+          (env يضيف ~34px). pb-32 = 128px يترك فسحة 34px في أضيق الحالات؛
+          pb-28 كان يتركها 18px وهو ضيّق على إبهام. */}
+      <main className="mx-auto max-w-4xl px-5 pt-8 pb-32 md:pb-8">
         <p className="mb-6 text-lg text-parchment/85">
           {d.greeting} <span className="font-bold text-gold-light">{firstName}</span>
         </p>
         {children}
       </main>
+
+      <BottomNav
+        unread={unread}
+        showManage={profile.role === "admin" || profile.role === "supervisor"}
+      />
     </div>
   );
 }

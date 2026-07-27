@@ -41,6 +41,9 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: "#14100B",
+  // مثبَّت كتطبيق على آيفون: بدون cover يُحاط المحتوى بشريطين أسودين حول
+  // النتوء. ومعه تلزم حواف الأمان في الترويسة والشريط السفلي — وهي مضبوطة.
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
