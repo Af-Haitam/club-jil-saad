@@ -11,6 +11,9 @@ const beta = process.env.APP_VARIANT === "beta";
 
 module.exports = ({ config }) => ({
   ...config,
+  // كان مُهمَلًا: مسار البناء يقبل رقم إصدارٍ ثمّ يتجاهله، فتخرج كلّ نسخة
+  // باسم 2.0.0 مهما كتبنا. رقم البناء وحده كان يتقدّم.
+  version: process.env.VERSION_NAME || config.version,
   name: beta ? "الجيل الصاعد (تجربة)" : config.name,
   android: {
     ...config.android,

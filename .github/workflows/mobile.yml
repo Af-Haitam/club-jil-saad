@@ -55,6 +55,7 @@ jobs:
       - name: توليد مشروع أندرويد
         env:
           VERSION_CODE: ${{ github.run_number }}
+          VERSION_NAME: ${{ inputs.versionName }}
           APP_VARIANT: ${{ inputs.variant }}
           EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
           EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
@@ -80,6 +81,7 @@ jobs:
           EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
           EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
           APP_VARIANT: ${{ inputs.variant }}
+          VERSION_NAME: ${{ inputs.versionName }}
         run: |
           cd android
           ./gradlew --no-daemon assembleRelease
