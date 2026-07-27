@@ -5,6 +5,7 @@
 // نُوقّع الرسالة بمفتاح VAPID ونرسلها إليه مباشرة. لا حساب ولا بطاقة.
 import webpush, { type PushSubscription, WebPushError } from "web-push";
 
+import { sendFcm, isFcmConfigured } from "./fcm";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export interface PushPayload {
@@ -51,6 +52,7 @@ interface TokenRow {
   id: string;
   token: string;
   keys: { p256dh: string; auth: string } | null;
+  platform: "web" | "android" | "ios";
 }
 
 export interface PushOutcome {
@@ -66,18 +68,31 @@ export async function pushToUsers(
   userIds: string[],
   payload: PushPayload,
 ): Promise<PushOutcome> {
-  if (userIds.length === 0 || !isPushConfigured()) return { sent: 0, pruned: 0 };
+  // كلّ طريقٍ يقف بنفسه. الشرط كان `!isPushConfigured()` وحده، فكان غياب
+  // مفاتيح VAPID يُسكت تنبيهات التطبيق الأصيل أيضًا — وهي لا تمرّ بها.
+  const web = isPushConfigured();
+  const native = isFcmConfigured();
+  if (userIds.length === 0 || (!web && !native)) return { sent: 0, pruned: 0 };
 
   try {
     const supabase = createAdminClient();
     const { data, error } = await supabase
       .from("push_tokens")
-      .select("id, token, keys")
+      .select("id, token, keys, platform")
       .in("user_id", userIds);
 
     if (error || !data || data.length === 0) return { sent: 0, pruned: 0 };
 
-    const rows = (data as TokenRow[]).filter((r) => r.keys?.p256dh && r.keys?.auth);
+    const all = data as TokenRow[];
+    // الويب يُعرف بوجود مفاتيح ECDH؛ رمز FCM نصٌّ مجرّد بلا مفاتيح. فالقسمة
+    // على وجود المفاتيح لا على عمود platform: صفٌّ قديم قد يحمل platform
+    // خاطئًا، لكنّه لا يستطيع أن يحمل مفاتيح لا يملكها.
+    const rows = web ? all.filter((r) => r.keys?.p256dh && r.keys?.auth) : [];
+    const nativeTokens = native
+      ? all
+          .filter((r) => !(r.keys?.p256dh && r.keys?.auth))
+          .map((r) => ({ id: r.id, token: r.token }))
+      : [];
     const message = JSON.stringify({
       title: payload.title,
       body: payload.body.slice(0, MAX_BODY),
@@ -98,7 +113,21 @@ export async function pushToUsers(
       }),
     );
 
-    const deadIds: string[] = [];
+    // التطبيق الأصيل — طريقٌ آخر تمامًا، ويفشل مستقلًّا عن الويب.
+    const fcm = await sendFcm(
+      nativeTokens.map((n) => n.token),
+      {
+        title: payload.title,
+        body: payload.body.slice(0, MAX_BODY),
+        url: payload.url,
+        image: payload.image ?? null,
+      },
+    );
+    const deadNativeIds = nativeTokens
+      .filter((n) => fcm.dead.includes(n.token))
+      .map((n) => n.id);
+
+    const deadIds: string[] = [...deadNativeIds];
     const liveIds: string[] = [];
     results.forEach((result, i) => {
       if (result.status === "fulfilled") {
@@ -121,7 +150,7 @@ export async function pushToUsers(
         .in("id", liveIds);
     }
 
-    return { sent: liveIds.length, pruned: deadIds.length };
+    return { sent: liveIds.length + fcm.sent, pruned: deadIds.length };
   } catch {
     return { sent: 0, pruned: 0 };
   }
