@@ -66,7 +66,7 @@ export default function OverviewScreen() {
         {data ? (
           <>
             <Position data={data} />
-            <WeeklyGrid cycle={data.cycle} sessions={data.sessions} />
+            <WeeklyGrid cycle={data.cycle} sessions={data.sessions} surahs={data.surahs} />
             <ExamCard data={data} />
           </>
         ) : null}

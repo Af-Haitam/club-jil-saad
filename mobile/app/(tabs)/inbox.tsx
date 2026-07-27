@@ -4,17 +4,26 @@ import { FlatList, Image, Pressable, RefreshControl, Text, View } from "react-na
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useSession } from "../../lib/session";
-import { getInbox, markAllRead, type Notice } from "../../lib/queries";
+import { getFeed, markAllRead, type FeedItem } from "../../lib/queries";
 import { s } from "../../lib/strings";
 import { c, f, alpha } from "../../lib/theme";
 
 export default function InboxScreen() {
   const { session } = useSession();
-  const [items, setItems] = useState<Notice[] | null>(null);
+  const [items, setItems] = useState<FeedItem[] | null>(null);
+  const [failed, setFailed] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
-    setItems(await getInbox());
+    try {
+      setItems(await getFeed());
+      setFailed(false);
+    } catch {
+      // بلا هذا الالتقاط تبقى القائمة null فيرى العضو شاشةً بيضاء صامتة
+      // ولا يعرف أعطبَ التطبيق أم لا إشعار عنده.
+      setFailed(true);
+      setItems((prev) => prev ?? []);
+    }
   }, []);
 
   useEffect(() => {
@@ -27,7 +36,7 @@ export default function InboxScreen() {
     setRefreshing(false);
   }, [load]);
 
-  const anyUnread = (items ?? []).some((n) => !n.read_at);
+  const anyUnread = (items ?? []).some((n) => n.unread);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.ink }} edges={["top"]}>
@@ -48,9 +57,7 @@ export default function InboxScreen() {
             onPress={async () => {
               if (!session) return;
               // تفاؤليًّا: الشارة تختفي فورًا، والكتابة تلحق.
-              setItems((prev) =>
-                (prev ?? []).map((n) => ({ ...n, read_at: n.read_at ?? new Date().toISOString() })),
-              );
+              setItems((prev) => (prev ?? []).map((n) => ({ ...n, unread: false })));
               await markAllRead(session.user.id);
             }}
           >
@@ -63,7 +70,7 @@ export default function InboxScreen() {
 
       <FlatList
         data={items ?? []}
-        keyExtractor={(n) => n.id}
+        keyExtractor={(n) => n.key}
         contentContainerStyle={{ padding: 20, paddingTop: 4, gap: 14 }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.gold} />
@@ -75,12 +82,12 @@ export default function InboxScreen() {
                 fontFamily: f.body,
                 fontSize: 14,
                 lineHeight: 28,
-                color: alpha(c.parchment, 0.55),
+                color: failed ? c.absent : alpha(c.parchment, 0.55),
                 textAlign: "center",
                 marginTop: 40,
               }}
             >
-              {s.inbox.empty}
+              {failed ? s.common.error : s.inbox.empty}
             </Text>
           )
         }
@@ -90,8 +97,8 @@ export default function InboxScreen() {
   );
 }
 
-function PostCard({ n }: { n: Notice }) {
-  const unread = !n.read_at;
+function PostCard({ n }: { n: FeedItem }) {
+  const unread = n.unread;
   return (
     <View
       style={{
@@ -114,7 +121,7 @@ function PostCard({ n }: { n: Notice }) {
       <View style={{ padding: 18 }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
           <Text style={{ fontFamily: f.body, fontSize: 11, color: c.goldLight, letterSpacing: 1 }}>
-            {formatDate(n.created_at)}
+            {formatDate(n.at)}
           </Text>
           {unread ? (
             <View

@@ -43,6 +43,18 @@ export const s = {
     today: "اليوم",
   },
 
+  detail: {
+    status: "التقييم",
+    range: "المقدار",
+    mistakes: "عدد الأخطاء",
+    notes: "ملاحظة المشرف",
+    date: "تاريخ الحصة",
+    none: "لم تُسجَّل هذه الحصة بعد",
+    close: "إغلاق",
+    from: "من",
+    to: "إلى",
+  },
+
   status: {
     green: "أتقن",
     red: "لم يُتقن",

@@ -116,13 +116,106 @@ export type Notice = {
   created_at: string;
 };
 
-export async function getInbox(): Promise<Notice[]> {
-  const { data } = await supabase
-    .from("notifications")
-    .select("id, kind, title, body, image_url, url, read_at, created_at")
-    .order("created_at", { ascending: false })
-    .limit(50);
-  return (data ?? []) as Notice[];
+export type FeedItem = {
+  key: string;
+  title: string | null;
+  body: string | null;
+  image_url: string | null;
+  at: string;
+  unread: boolean;
+};
+
+/**
+ * ما يراه العضو في صندوقه.
+ *
+ * **ليست جدول `notifications` وحده**، وهذا فرقٌ يهمّ: التوزيع يحدث لحظة
+ * النشر، فمن انضمّ إلى النادي اليوم لا يملك أيّ إشعارٍ عن إعلانات الأمس —
+ * وكان صندوقه سيظهر فارغًا بينما الموقع يعرض له كلّ شيء.
+ *
+ * فنقرأ الثلاثة معًا: الإشعارات (وهي وحدها تحمل «مقروء/غير مقروء»، وفيها
+ * رسائل المهمّة اليومية التي لا صفّ لها في أيّ جدول)، ثمّ الإعلانات
+ * والتذكيرات — ويُسقط المكرَّر منها بمعرّف مصدره.
+ *
+ * إعلانٌ بلا إشعارٍ **لا يُعلَّم «جديد»**: العضو لم يُنبَّه إليه أصلًا،
+ * ووسمُه جديدًا شارةٌ لا تنطفئ أبدًا.
+ */
+export async function getFeed(): Promise<FeedItem[]> {
+  const [noticeRes, annRes, remRes] = await Promise.all([
+    supabase
+      .from("notifications")
+      .select("id, announcement_id, reminder_id, title, body, image_url, read_at, created_at")
+      .order("created_at", { ascending: false })
+      .limit(60),
+    supabase
+      .from("announcements")
+      .select("id, title, body, image_url, published_at")
+      .not("published_at", "is", null)
+      .order("published_at", { ascending: false })
+      .limit(30),
+    supabase
+      .from("reminders")
+      .select("id, title, body, image_url, published_at")
+      .not("published_at", "is", null)
+      .order("published_at", { ascending: false })
+      .limit(20),
+  ]);
+
+  const items = new Map<string, FeedItem>();
+
+  type NoticeRow = {
+    id: string;
+    announcement_id: string | null;
+    reminder_id: string | null;
+    title: string | null;
+    body: string | null;
+    image_url: string | null;
+    read_at: string | null;
+    created_at: string;
+  };
+
+  for (const n of (noticeRes.data ?? []) as NoticeRow[]) {
+    const key = n.announcement_id
+      ? `a:${n.announcement_id}`
+      : n.reminder_id
+        ? `r:${n.reminder_id}`
+        : `n:${n.id}`;
+    items.set(key, {
+      key,
+      title: n.title,
+      body: n.body,
+      image_url: n.image_url,
+      at: n.created_at,
+      unread: !n.read_at,
+    });
+  }
+
+  type PostRow = {
+    id: string;
+    title: string | null;
+    body: string | null;
+    image_url: string | null;
+    published_at: string;
+  };
+
+  const addPosts = (rows: PostRow[], prefix: "a" | "r") => {
+    for (const p of rows) {
+      const key = `${prefix}:${p.id}`;
+      if (items.has(key)) continue;
+      items.set(key, {
+        key,
+        title: p.title,
+        body: p.body,
+        image_url: p.image_url,
+        at: p.published_at,
+        unread: false,
+      });
+    }
+  };
+
+  addPosts((annRes.data ?? []) as PostRow[], "a");
+  addPosts((remRes.data ?? []) as PostRow[], "r");
+
+  return [...items.values()].sort((x, y) => (x.at < y.at ? 1 : -1));
 }
 
 export async function markAllRead(userId: string): Promise<void> {
