@@ -16,26 +16,27 @@ export type Session = {
   id: string;
   week_number: number;
   status: "green" | "red" | "absent" | "excused" | "pending";
-  surah_number: number | null;
-  ayah_from: number | null;
-  ayah_to: number | null;
-  mistakes: number | null;
+  from_surah: number | null;
+  from_ayah: number | null;
+  to_ayah: number | null;
+  mistakes_count: number | null;
   notes: string | null;
   scheduled_date: string | null;
 };
 
 export type Progress = {
-  surah_number: number | null;
-  ayah_number: number | null;
-  juz_count: number | null;
-  pages_count: number | null;
+  current_surah: number | null;
+  current_ayah: number | null;
+  memorized_juz: number | null;
+  memorized_pages: number | null;
 };
 
 export type Exam = {
   id: string;
   title: string | null;
   exam_date: string | null;
-  place: string | null;
+  exam_time: string | null;
+  location: string | null;
 };
 
 export type Post = {
@@ -66,6 +67,7 @@ export async function getOverview(userId: string): Promise<Overview> {
     supabase.from("quran_surahs").select("number, name_ar"),
   ]);
 
+  if (cycleRes.error) throw new Error(JSON.stringify(cycleRes.error));
   const cycle = (cycleRes.data ?? null) as Cycle | null;
 
   const surahs: Record<number, string> = {};
@@ -77,24 +79,31 @@ export async function getOverview(userId: string): Promise<Overview> {
     cycle
       ? supabase
           .from("weekly_sessions")
-          .select("id, week_number, status, surah_number, ayah_from, ayah_to, mistakes, notes, scheduled_date")
+          .select("id, week_number, status, from_surah, from_ayah, to_ayah, mistakes_count, notes, scheduled_date")
           .eq("member_id", userId)
           .eq("cycle_id", cycle.id)
           .order("week_number", { ascending: true })
       : Promise.resolve({ data: [] }),
     supabase
       .from("hifz_progress")
-      .select("surah_number, ayah_number, juz_count, pages_count")
+      .select("current_surah, current_ayah, memorized_juz, memorized_pages")
       .eq("member_id", userId)
       .maybeSingle(),
     supabase
       .from("exams")
-      .select("id, title, exam_date, place")
+      .select("id, title, exam_date, exam_time, location")
       .eq("status", "upcoming")
       .order("exam_date", { ascending: true, nullsFirst: false })
       .limit(1)
       .maybeSingle(),
   ]);
+
+  // اسم عمودٍ خاطئ يجعل PostgREST يرفض الاستعلام كلّه ويعيد data = null،
+  // و`?? []` كان يحوّل ذلك إلى شبكةٍ فارغة **تُشبه تمامًا** «لم تُسجَّل حصص
+  // بعد». ثلاثة استعلامات كانت مكسورة بهذا الشكل ولم يشتكِ شيء. فليصرخ.
+  for (const r of [sessionsRes, progressRes, examRes] as { error?: unknown }[]) {
+    if (r.error) throw new Error(JSON.stringify(r.error));
+  }
 
   return {
     cycle,
@@ -159,6 +168,10 @@ export async function getFeed(): Promise<FeedItem[]> {
       .order("published_at", { ascending: false })
       .limit(20),
   ]);
+
+  for (const r of [noticeRes, annRes, remRes] as { error?: unknown }[]) {
+    if (r.error) throw new Error(JSON.stringify(r.error));
+  }
 
   const items = new Map<string, FeedItem>();
 

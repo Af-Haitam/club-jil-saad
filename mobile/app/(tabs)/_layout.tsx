@@ -1,6 +1,6 @@
 // شريط التبويبات الأصيل — نفس ترتيب الموقع وأيقوناته، لكنّه هنا شريط
 // النظام نفسه: يحمل حافّة الأمان السفلية ويتحرّك بحركة أندرويد.
-import { Tabs } from "expo-router";
+import { Redirect, Tabs } from "expo-router";
 import { Text, View, type ColorValue } from "react-native";
 import Svg, { Circle, Path, Rect } from "react-native-svg";
 
@@ -8,10 +8,18 @@ import { s } from "../../lib/strings";
 import { f } from "../../lib/theme";
 import { useTheme } from "../../lib/useTheme";
 import { useUnread } from "../../lib/unread";
+import { useSession } from "../../lib/session";
 
 export default function TabsLayout() {
   const { t } = useTheme();
+  const { session, loading } = useSession();
   const unread = useUnread();
+
+  // تسجيل الخروج يُفرِغ الجلسة، لكنّ العضو يكون واقفًا على «ملفي» — ولا شيء
+  // كان ينقله. فيبقى داخل التطبيق بلا جلسة، يرى شاشاتٍ فارغة ولا يفهم لماذا.
+  // الحارس هنا لا في زرّ الخروج وحده: أيّ انتهاءٍ للجلسة (انتهاء الرمز مثلًا)
+  // يعيده إلى الدخول.
+  if (!loading && !session) return <Redirect href="/login" />;
 
   return (
     <Tabs

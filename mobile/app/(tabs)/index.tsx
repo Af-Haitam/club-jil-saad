@@ -80,7 +80,7 @@ export default function OverviewScreen() {
 function Position({ data }: { data: Overview }) {
   const { t } = useTheme();
   const p = data.progress;
-  const has = p && p.surah_number;
+  const has = p && p.current_surah;
   return (
     <Card title={s.overview.positionTitle}>
       {has ? (
@@ -91,12 +91,12 @@ function Position({ data }: { data: Overview }) {
           <Text
             style={{ fontFamily: f.displayBold, fontSize: 22, color: t.goldSoft, marginTop: 4 }}
           >
-            {data.surahs[p.surah_number as number] ?? ""}
-            {p.ayah_number ? ` — ${s.overview.ayah} ${p.ayah_number}` : ""}
+            {data.surahs[p.current_surah as number] ?? ""}
+            {p.current_ayah ? ` — ${s.overview.ayah} ${p.current_ayah}` : ""}
           </Text>
           <View style={{ flexDirection: "row", gap: 28, marginTop: 16 }}>
-            <Stat label={s.overview.juz} value={p.juz_count ?? 0} />
-            <Stat label={s.overview.pages} value={p.pages_count ?? 0} />
+            <Stat label={s.overview.juz} value={p.memorized_juz ?? 0} />
+            <Stat label={s.overview.pages} value={p.memorized_pages ?? 0} />
           </View>
         </>
       ) : (
@@ -150,7 +150,7 @@ function ExamCard({ data }: { data: Overview }) {
       </Text>
       <Text style={{ fontFamily: f.body, fontSize: 14, color: t.textDim, marginTop: 8 }}>
         {days === 0 ? s.overview.today : `${s.overview.examRemaining} ${days} ${s.overview.day}`}
-        {e.place ? ` — ${e.place}` : ""}
+        {e.location ? ` — ${e.location}` : ""}
       </Text>
     </Card>
   );

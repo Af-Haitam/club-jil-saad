@@ -188,18 +188,18 @@ function Detail({
 
           {recorded ? (
             <ScrollView style={{ marginTop: 8 }}>
-              {sess.surah_number ? (
+              {sess.from_surah ? (
                 <Row
                   label={s.detail.range}
-                  value={`${surahs[sess.surah_number] ?? ""}${
-                    sess.ayah_from && sess.ayah_to
-                      ? ` — ${s.detail.from} ${sess.ayah_from} ${s.detail.to} ${sess.ayah_to}`
+                  value={`${surahs[sess.from_surah] ?? ""}${
+                    sess.from_ayah && sess.to_ayah
+                      ? ` — ${s.detail.from} ${sess.from_ayah} ${s.detail.to} ${sess.to_ayah}`
                       : ""
                   }`}
                 />
               ) : null}
-              {sess.mistakes !== null ? (
-                <Row label={s.detail.mistakes} value={String(sess.mistakes)} />
+              {sess.mistakes_count !== null ? (
+                <Row label={s.detail.mistakes} value={String(sess.mistakes_count)} />
               ) : null}
               {sess.scheduled_date ? (
                 <Row label={s.detail.date} value={sess.scheduled_date} />
