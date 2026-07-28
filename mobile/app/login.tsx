@@ -21,12 +21,14 @@ import * as Linking from "expo-linking";
 import { supabase } from "../lib/supabase";
 import { useSession } from "../lib/session";
 import { s } from "../lib/strings";
-import { c, f, alpha } from "../lib/theme";
+import { f, alpha } from "../lib/theme";
+import { useTheme } from "../lib/useTheme";
 import Loading from "../components/Loading";
 
 const SITE = "https://club-jil-saad.vercel.app";
 
 export default function Login() {
+  const { t } = useTheme();
   const { session, profile, loading } = useSession();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -60,7 +62,7 @@ export default function Login() {
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: c.ink }}
+      style={{ flex: 1, backgroundColor: t.bg }}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <ScrollView
@@ -78,7 +80,7 @@ export default function Login() {
               fontFamily: f.logo,
               fontSize: 30,
               lineHeight: 48,
-              color: c.goldLight,
+              color: t.goldSoft,
               marginTop: 4,
             }}
           >
@@ -89,13 +91,13 @@ export default function Login() {
         <View
           style={{
             borderWidth: 1,
-            borderColor: c.inkLine,
-            backgroundColor: alpha(c.inkSoft, 0.7),
+            borderColor: t.line,
+            backgroundColor: t.surface,
             borderRadius: 12,
             padding: 24,
           }}
         >
-          <Text style={{ fontFamily: f.displayBold, fontSize: 20, color: c.goldLight }}>
+          <Text style={{ fontFamily: f.displayBold, fontSize: 20, color: t.goldSoft }}>
             {s.login.welcome}
           </Text>
 
@@ -105,7 +107,7 @@ export default function Login() {
                 fontFamily: f.body,
                 fontSize: 14,
                 lineHeight: 28,
-                color: c.absent,
+                color: t.absent,
                 marginTop: 12,
               }}
             >
@@ -130,7 +132,7 @@ export default function Login() {
 
           {error ? (
             <Text
-              style={{ fontFamily: f.body, fontSize: 14, color: c.red, marginTop: 14 }}
+              style={{ fontFamily: f.body, fontSize: 14, color: t.red, marginTop: 14 }}
             >
               {error}
             </Text>
@@ -141,7 +143,7 @@ export default function Login() {
             disabled={busy}
             style={({ pressed }) => ({
               marginTop: 22,
-              backgroundColor: c.gold,
+              backgroundColor: t.gold,
               borderRadius: 3,
               paddingVertical: 14,
               alignItems: "center",
@@ -149,9 +151,9 @@ export default function Login() {
             })}
           >
             {busy ? (
-              <ActivityIndicator color={c.ink} />
+              <ActivityIndicator color={t.onGold} />
             ) : (
-              <Text style={{ fontFamily: f.bodyBold, fontSize: 16, color: c.ink }}>
+              <Text style={{ fontFamily: f.bodyBold, fontSize: 16, color: t.onGold }}>
                 {s.login.submit}
               </Text>
             )}
@@ -164,7 +166,7 @@ export default function Login() {
               fontFamily: f.body,
               fontSize: 13,
               lineHeight: 26,
-              color: alpha(c.parchment, 0.55),
+              color: t.textFaint,
               textAlign: "center",
             }}
           >
@@ -191,13 +193,14 @@ function Field({
   secure?: boolean;
   keyboardType?: "email-address";
 }) {
+  const { t } = useTheme();
   return (
     <View style={{ marginTop: 18 }}>
       <Text
         style={{
           fontFamily: f.body,
           fontSize: 13,
-          color: alpha(c.parchment, 0.7),
+          color: t.textDim,
           marginBottom: 6,
           textAlign: "right",
         }}
@@ -208,21 +211,21 @@ function Field({
         value={value}
         onChangeText={onChange}
         placeholder={placeholder}
-        placeholderTextColor={alpha(c.parchment, 0.35)}
+        placeholderTextColor={t.textFaint}
         secureTextEntry={secure}
         keyboardType={keyboardType}
         autoCapitalize="none"
         autoCorrect={false}
         style={{
           borderWidth: 1,
-          borderColor: c.inkLine,
-          backgroundColor: c.ink,
+          borderColor: t.line,
+          backgroundColor: t.bg,
           borderRadius: 3,
           paddingHorizontal: 14,
           paddingVertical: 12,
           fontFamily: f.body,
           fontSize: 15,
-          color: c.parchment,
+          color: t.text,
           textAlign: "right",
           // البريد وكلمة السرّ لاتينيّان، فيُكتبان من اليسار داخل حقلٍ عربيّ
           writingDirection: "ltr",

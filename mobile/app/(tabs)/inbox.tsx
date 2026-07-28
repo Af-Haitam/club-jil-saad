@@ -6,9 +6,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useSession } from "../../lib/session";
 import { getFeed, markAllRead, type FeedItem } from "../../lib/queries";
 import { s } from "../../lib/strings";
-import { c, f, alpha } from "../../lib/theme";
+import { f, alpha } from "../../lib/theme";
+import { useTheme } from "../../lib/useTheme";
 
 export default function InboxScreen() {
+  const { t } = useTheme();
   const { session } = useSession();
   const [items, setItems] = useState<FeedItem[] | null>(null);
   const [failed, setFailed] = useState(false);
@@ -39,7 +41,7 @@ export default function InboxScreen() {
   const anyUnread = (items ?? []).some((n) => n.unread);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: c.ink }} edges={["top"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: t.bg }} edges={["top"]}>
       <View
         style={{
           flexDirection: "row",
@@ -49,7 +51,7 @@ export default function InboxScreen() {
           paddingVertical: 14,
         }}
       >
-        <Text style={{ fontFamily: f.logo, fontSize: 22, lineHeight: 36, color: c.goldLight }}>
+        <Text style={{ fontFamily: f.logo, fontSize: 22, lineHeight: 36, color: t.goldSoft }}>
           {s.inbox.title}
         </Text>
         {anyUnread ? (
@@ -61,7 +63,7 @@ export default function InboxScreen() {
               await markAllRead(session.user.id);
             }}
           >
-            <Text style={{ fontFamily: f.body, fontSize: 13, color: alpha(c.parchment, 0.6) }}>
+            <Text style={{ fontFamily: f.body, fontSize: 13, color: t.textFaint }}>
               {s.inbox.markAll}
             </Text>
           </Pressable>
@@ -73,7 +75,7 @@ export default function InboxScreen() {
         keyExtractor={(n) => n.key}
         contentContainerStyle={{ padding: 20, paddingTop: 4, gap: 14 }}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.gold} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={t.gold} />
         }
         ListEmptyComponent={
           items === null ? null : (
@@ -82,7 +84,7 @@ export default function InboxScreen() {
                 fontFamily: f.body,
                 fontSize: 14,
                 lineHeight: 28,
-                color: failed ? c.absent : alpha(c.parchment, 0.55),
+                color: failed ? t.absent : t.textFaint,
                 textAlign: "center",
                 marginTop: 40,
               }}
@@ -98,13 +100,14 @@ export default function InboxScreen() {
 }
 
 function PostCard({ n }: { n: FeedItem }) {
+  const { t } = useTheme();
   const unread = n.unread;
   return (
     <View
       style={{
         borderWidth: 1,
-        borderColor: unread ? alpha(c.gold, 0.45) : alpha(c.gold, 0.18),
-        backgroundColor: alpha(c.inkSoft, 0.6),
+        borderColor: unread ? alpha(t.gold, 0.45) : alpha(t.gold, 0.18),
+        backgroundColor: t.surface,
         borderRadius: 16,
         overflow: "hidden",
       }}
@@ -120,19 +123,19 @@ function PostCard({ n }: { n: FeedItem }) {
       ) : null}
       <View style={{ padding: 18 }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-          <Text style={{ fontFamily: f.body, fontSize: 11, color: c.goldLight, letterSpacing: 1 }}>
+          <Text style={{ fontFamily: f.body, fontSize: 11, color: t.goldSoft, letterSpacing: 1 }}>
             {formatDate(n.at)}
           </Text>
           {unread ? (
             <View
               style={{
-                backgroundColor: c.gold,
+                backgroundColor: t.gold,
                 borderRadius: 3,
                 paddingHorizontal: 6,
                 paddingVertical: 1,
               }}
             >
-              <Text style={{ fontFamily: f.bodyBold, fontSize: 10, color: c.ink }}>
+              <Text style={{ fontFamily: f.bodyBold, fontSize: 10, color: t.onGold }}>
                 {s.inbox.unread}
               </Text>
             </View>
@@ -140,7 +143,7 @@ function PostCard({ n }: { n: FeedItem }) {
         </View>
         {n.title ? (
           <Text
-            style={{ fontFamily: f.logo, fontSize: 19, lineHeight: 34, color: c.goldLight, marginTop: 8 }}
+            style={{ fontFamily: f.logo, fontSize: 19, lineHeight: 34, color: t.goldSoft, marginTop: 8 }}
           >
             {n.title}
           </Text>
@@ -151,7 +154,7 @@ function PostCard({ n }: { n: FeedItem }) {
               fontFamily: f.body,
               fontSize: 14,
               lineHeight: 28,
-              color: alpha(c.parchment, 0.8),
+              color: t.textDim,
               marginTop: 4,
             }}
           >

@@ -90,6 +90,14 @@ export const s = {
     unsupported: "التنبيهات لا تعمل على المحاكي",
   },
 
+  theme: {
+    title: "مظهر التطبيق",
+    dark: "داكن",
+    black: "أسود",
+    light: "فاتح",
+    blackHint: "الأسود الخالص يُطفئ البكسل على شاشات AMOLED فيوفّر البطارية.",
+  },
+
   common: {
     retry: "أعِد المحاولة",
     loading: "جارٍ التحميل…",

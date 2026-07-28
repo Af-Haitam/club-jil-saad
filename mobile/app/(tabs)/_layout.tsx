@@ -5,35 +5,34 @@ import { Text, View, type ColorValue } from "react-native";
 import Svg, { Circle, Path, Rect } from "react-native-svg";
 
 import { s } from "../../lib/strings";
-import { c, f, alpha } from "../../lib/theme";
+import { f } from "../../lib/theme";
+import { useTheme } from "../../lib/useTheme";
 import { useUnread } from "../../lib/unread";
 
 export default function TabsLayout() {
+  const { t } = useTheme();
   const unread = useUnread();
 
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: c.gold,
-        tabBarInactiveTintColor: alpha(c.parchment, 0.55),
+        tabBarActiveTintColor: t.gold,
+        tabBarInactiveTintColor: t.textFaint,
         tabBarStyle: {
-          backgroundColor: c.ink,
-          borderTopColor: c.inkLine,
+          backgroundColor: t.bg,
+          borderTopColor: t.line,
           borderTopWidth: 1,
           height: 62,
           paddingTop: 6,
         },
         tabBarLabelStyle: { fontFamily: f.body, fontSize: 11 },
-        sceneStyle: { backgroundColor: c.ink },
+        sceneStyle: { backgroundColor: t.bg },
       }}
     >
       <Tabs.Screen
         name="index"
-        options={{
-          title: s.tabs.overview,
-          tabBarIcon: ({ color }) => <GridIcon color={color} />,
-        }}
+        options={{ title: s.tabs.overview, tabBarIcon: ({ color }) => <GridIcon color={color} /> }}
       />
       <Tabs.Screen
         name="inbox"
@@ -44,10 +43,7 @@ export default function TabsLayout() {
       />
       <Tabs.Screen
         name="profile"
-        options={{
-          title: s.tabs.profile,
-          tabBarIcon: ({ color }) => <PersonIcon color={color} />,
-        }}
+        options={{ title: s.tabs.profile, tabBarIcon: ({ color }) => <PersonIcon color={color} /> }}
       />
     </Tabs>
   );
@@ -67,6 +63,7 @@ function GridIcon({ color }: { color: ColorValue }) {
 }
 
 function BellIcon({ color, badge }: { color: ColorValue; badge: number }) {
+  const { t } = useTheme();
   return (
     <View>
       <Svg
@@ -91,13 +88,13 @@ function BellIcon({ color, badge }: { color: ColorValue; badge: number }) {
             minWidth: 16,
             height: 16,
             borderRadius: 8,
-            backgroundColor: c.gold,
+            backgroundColor: t.gold,
             alignItems: "center",
             justifyContent: "center",
             paddingHorizontal: 3,
           }}
         >
-          <Text style={{ fontFamily: f.bodyBold, fontSize: 10, color: c.ink }}>
+          <Text style={{ fontFamily: f.bodyBold, fontSize: 10, color: t.onGold }}>
             {badge > 9 ? "9+" : badge}
           </Text>
         </View>
@@ -123,3 +120,4 @@ function PersonIcon({ color }: { color: ColorValue }) {
     </Svg>
   );
 }
+

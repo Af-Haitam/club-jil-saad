@@ -60,8 +60,22 @@ export default function AppPage() {
         </h1>
         <p className="mt-2 max-w-md text-center text-sm leading-8 text-parchment/70">{a.subtitle}</p>
 
+        {/* ── الحساب أوّلًا ──
+            فوق كلّ شيء لأنّه شرطٌ لا خطوة: من نزّل التطبيق بلا حساب وقف
+            أمام شاشة دخولٍ لا مخرج منها. */}
+        <section className="mt-10 w-full rounded-2xl border border-gold/40 bg-gold/5 p-5 sm:p-6">
+          <h2 className="font-display text-base text-gold-light">{a.needAccountTitle}</h2>
+          <p className="mt-2 text-sm leading-8 text-parchment/75">{a.needAccountBody}</p>
+          <Link
+            href="/register"
+            className="mt-4 inline-block rounded-sm border border-gold px-5 py-2 text-sm text-gold transition-colors hover:bg-gold hover:text-ink"
+          >
+            {a.needAccountCta}
+          </Link>
+        </section>
+
         {/* ── أندرويد ── */}
-        <section className="mt-12 w-full rounded-2xl border border-gold/25 bg-ink-soft/60 p-6 backdrop-blur-sm sm:p-8">
+        <section className="mt-6 w-full rounded-2xl border border-gold/25 bg-ink-soft/60 p-6 backdrop-blur-sm sm:p-8">
           <h2 className="font-display text-xl text-gold">{a.androidHeading}</h2>
 
           {sizeMb ? (

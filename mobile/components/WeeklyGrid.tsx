@@ -1,27 +1,31 @@
 // شبكة الأسابيع — قلب البرنامج.
 //
-// الألوان مأخوذة من جدول التتبّع الورقي للنادي نفسه، وهي نفسها في الموقع.
-// ومعها رمزٌ داخل كلّ خلية: من لا يميّز الأحمر من الأخضر يقرأ الشبكة
-// بالرمز، لا باللون.
+// الألوان مأخوذة من جدول التتبّع الورقي للنادي نفسه، وهي نفسها في الموقع،
+// ولا تتغيّر بتغيّر السمة: الأخضر أخضرُ على الرقّ وعلى الحبر سواء. ومعها
+// رمزٌ داخل كلّ خلية: من لا يميّز الأحمر من الأخضر يقرأ الشبكة بالرمز.
 //
 // والخلية تُضغط. الشبكة وحدها تقول «أتقنتَ» أو «لم تُتقن»، أمّا ما سُمِّع
-// وكم خطأً وما قاله المشرف فهو ما يعود إليه العضو فعلًا — وهو موجود في
-// الموقع منذ المرحلة الثالثة، فغيابه هنا كان نقصًا لا اختصارًا.
+// وكم خطأً وما قاله المشرف فهو ما يعود إليه العضو فعلًا.
 import { useState } from "react";
 import { Modal, Pressable, ScrollView, Text, View } from "react-native";
 
 import type { Cycle, Session } from "../lib/queries";
 import { s } from "../lib/strings";
-import { c, f, alpha } from "../lib/theme";
+import { f, alpha } from "../lib/theme";
+import { useTheme } from "../lib/useTheme";
 import Card from "./Card";
 
-const meta: Record<Session["status"], { bg: string; glyph: string; label: string }> = {
-  green: { bg: c.green, glyph: "✓", label: s.status.green },
-  red: { bg: c.red, glyph: "✕", label: s.status.red },
-  absent: { bg: c.absent, glyph: "—", label: s.status.absent },
-  excused: { bg: c.excused, glyph: "•", label: s.status.excused },
-  pending: { bg: "transparent", glyph: "", label: s.status.pending },
-};
+type Meta = { bg: string; glyph: string; label: string };
+
+function statusMeta(t: ReturnType<typeof useTheme>["t"]): Record<Session["status"], Meta> {
+  return {
+    green: { bg: t.green, glyph: "✓", label: s.status.green },
+    red: { bg: t.red, glyph: "✕", label: s.status.red },
+    absent: { bg: t.absent, glyph: "—", label: s.status.absent },
+    excused: { bg: t.excused, glyph: "•", label: s.status.excused },
+    pending: { bg: "transparent", glyph: "", label: s.status.pending },
+  };
+}
 
 export default function WeeklyGrid({
   cycle,
@@ -32,12 +36,14 @@ export default function WeeklyGrid({
   sessions: Session[];
   surahs: Record<number, string>;
 }) {
+  const { t } = useTheme();
+  const meta = statusMeta(t);
   const [open, setOpen] = useState<{ week: number; session: Session | null } | null>(null);
 
   if (!cycle) {
     return (
       <Card title={s.overview.gridTitle}>
-        <Text style={{ fontFamily: f.body, fontSize: 14, color: alpha(c.parchment, 0.6) }}>
+        <Text style={{ fontFamily: f.body, fontSize: 14, color: t.textFaint }}>
           {s.overview.noCycle}
         </Text>
       </Card>
@@ -65,8 +71,8 @@ export default function WeeklyGrid({
                 height: 46,
                 borderRadius: 8,
                 borderWidth: filled ? 0 : 1,
-                borderColor: c.inkLine,
-                backgroundColor: filled ? m.bg : alpha(c.ink, 0.6),
+                borderColor: t.line,
+                backgroundColor: filled ? m.bg : t.bg,
                 alignItems: "center",
                 justifyContent: "center",
                 opacity: pressed ? 0.65 : 1,
@@ -76,7 +82,7 @@ export default function WeeklyGrid({
                 style={{
                   fontFamily: f.bodyBold,
                   fontSize: 12,
-                  color: filled ? "#fff" : alpha(c.parchment, 0.45),
+                  color: filled ? "#fff" : t.textFaint,
                 }}
               >
                 {w}
@@ -95,7 +101,7 @@ export default function WeeklyGrid({
           .map((k) => (
             <View key={k} style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
               <View style={{ width: 10, height: 10, borderRadius: 2, backgroundColor: meta[k].bg }} />
-              <Text style={{ fontFamily: f.body, fontSize: 11, color: alpha(c.parchment, 0.6) }}>
+              <Text style={{ fontFamily: f.body, fontSize: 11, color: t.textFaint }}>
                 {meta[k].label}
               </Text>
             </View>
@@ -116,6 +122,8 @@ function Detail({
   surahs: Record<number, string>;
   onClose: () => void;
 }) {
+  const { t } = useTheme();
+  const meta = statusMeta(t);
   const sess = open?.session ?? null;
   const m = sess ? meta[sess.status] : null;
   const recorded = sess && sess.status !== "pending";
@@ -136,31 +144,30 @@ function Detail({
         <Pressable
           onPress={(e) => e.stopPropagation()}
           style={{
-            backgroundColor: c.inkSoft,
+            backgroundColor: t.surface,
             borderTopLeftRadius: 22,
             borderTopRightRadius: 22,
             borderTopWidth: 1,
-            borderColor: alpha(c.gold, 0.3),
+            borderColor: alpha(t.gold, 0.32),
             paddingHorizontal: 22,
             paddingTop: 10,
             paddingBottom: 34,
             maxHeight: "80%",
           }}
         >
-          {/* مقبض السحب — إشارةٌ بصرية أنّ اللوح يُغلق */}
           <View
             style={{
               alignSelf: "center",
               width: 42,
               height: 4,
               borderRadius: 2,
-              backgroundColor: alpha(c.parchment, 0.25),
+              backgroundColor: t.line,
               marginBottom: 16,
             }}
           />
 
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-            <Text style={{ fontFamily: f.logo, fontSize: 20, lineHeight: 34, color: c.goldLight }}>
+            <Text style={{ fontFamily: f.logo, fontSize: 20, lineHeight: 34, color: t.goldSoft }}>
               {s.overview.week} {open?.week}
             </Text>
             {m && recorded ? (
@@ -205,7 +212,7 @@ function Detail({
                 fontFamily: f.body,
                 fontSize: 14,
                 lineHeight: 28,
-                color: alpha(c.parchment, 0.6),
+                color: t.textFaint,
                 marginTop: 14,
               }}
             >
@@ -218,14 +225,14 @@ function Detail({
             style={({ pressed }) => ({
               marginTop: 22,
               borderWidth: 1,
-              borderColor: alpha(c.gold, 0.4),
+              borderColor: alpha(t.gold, 0.45),
               borderRadius: 3,
               paddingVertical: 12,
               alignItems: "center",
               opacity: pressed ? 0.6 : 1,
             })}
           >
-            <Text style={{ fontFamily: f.bodyBold, fontSize: 15, color: c.gold }}>
+            <Text style={{ fontFamily: f.bodyBold, fontSize: 15, color: t.gold }}>
               {s.detail.close}
             </Text>
           </Pressable>
@@ -236,25 +243,12 @@ function Detail({
 }
 
 function Row({ label, value }: { label: string; value: string }) {
+  const { t } = useTheme();
   return (
-    <View
-      style={{
-        paddingVertical: 11,
-        borderBottomWidth: 1,
-        borderBottomColor: alpha(c.inkLine, 0.7),
-      }}
-    >
-      <Text style={{ fontFamily: f.body, fontSize: 12, color: alpha(c.parchment, 0.55) }}>
-        {label}
-      </Text>
+    <View style={{ paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: t.line }}>
+      <Text style={{ fontFamily: f.body, fontSize: 12, color: t.textFaint }}>{label}</Text>
       <Text
-        style={{
-          fontFamily: f.body,
-          fontSize: 15,
-          lineHeight: 28,
-          color: c.parchment,
-          marginTop: 3,
-        }}
+        style={{ fontFamily: f.body, fontSize: 15, lineHeight: 28, color: t.text, marginTop: 3 }}
       >
         {value}
       </Text>

@@ -6,12 +6,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useSession } from "../../lib/session";
 import { getOverview, type Overview } from "../../lib/queries";
 import { s } from "../../lib/strings";
-import { c, f, alpha } from "../../lib/theme";
+import { f, alpha } from "../../lib/theme";
+import { useTheme } from "../../lib/useTheme";
 import Loading from "../../components/Loading";
 import Card from "../../components/Card";
 import WeeklyGrid from "../../components/WeeklyGrid";
 
 export default function OverviewScreen() {
+  const { t } = useTheme();
   const { session, profile } = useSession();
   const [data, setData] = useState<Overview | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -42,22 +44,22 @@ export default function OverviewScreen() {
   const firstName = (profile?.full_name ?? "").trim().split(/\s+/)[0];
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: c.ink }} edges={["top"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: t.bg }} edges={["top"]}>
       <ScrollView
         contentContainerStyle={{ padding: 20, paddingBottom: 32, gap: 16 }}
         refreshControl={
           // السحب للتحديث — إيماءة يعرفها كلّ من استعمل تطبيقًا
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.gold} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={t.gold} />
         }
       >
-        <Text style={{ fontFamily: f.body, fontSize: 18, color: alpha(c.parchment, 0.85) }}>
+        <Text style={{ fontFamily: f.body, fontSize: 18, color: t.text }}>
           {s.overview.greeting}{" "}
-          <Text style={{ fontFamily: f.bodyBold, color: c.goldLight }}>{firstName}</Text>
+          <Text style={{ fontFamily: f.bodyBold, color: t.goldSoft }}>{firstName}</Text>
         </Text>
 
         {failed ? (
           <Card>
-            <Text style={{ fontFamily: f.body, fontSize: 14, color: c.absent }}>
+            <Text style={{ fontFamily: f.body, fontSize: 14, color: t.absent }}>
               {s.common.error}
             </Text>
           </Card>
@@ -76,17 +78,18 @@ export default function OverviewScreen() {
 }
 
 function Position({ data }: { data: Overview }) {
+  const { t } = useTheme();
   const p = data.progress;
   const has = p && p.surah_number;
   return (
     <Card title={s.overview.positionTitle}>
       {has ? (
         <>
-          <Text style={{ fontFamily: f.body, fontSize: 14, color: alpha(c.parchment, 0.7) }}>
+          <Text style={{ fontFamily: f.body, fontSize: 14, color: t.textDim }}>
             {s.overview.positionAt}
           </Text>
           <Text
-            style={{ fontFamily: f.displayBold, fontSize: 22, color: c.goldLight, marginTop: 4 }}
+            style={{ fontFamily: f.displayBold, fontSize: 22, color: t.goldSoft, marginTop: 4 }}
           >
             {data.surahs[p.surah_number as number] ?? ""}
             {p.ayah_number ? ` — ${s.overview.ayah} ${p.ayah_number}` : ""}
@@ -98,7 +101,7 @@ function Position({ data }: { data: Overview }) {
         </>
       ) : (
         <Text
-          style={{ fontFamily: f.body, fontSize: 14, lineHeight: 28, color: alpha(c.parchment, 0.6) }}
+          style={{ fontFamily: f.body, fontSize: 14, lineHeight: 28, color: t.textFaint }}
         >
           {s.overview.positionNone}
         </Text>
@@ -108,10 +111,11 @@ function Position({ data }: { data: Overview }) {
 }
 
 function Stat({ label, value }: { label: string; value: number }) {
+  const { t } = useTheme();
   return (
     <View>
-      <Text style={{ fontFamily: f.displayBold, fontSize: 24, color: c.gold }}>{value}</Text>
-      <Text style={{ fontFamily: f.body, fontSize: 12, color: alpha(c.parchment, 0.6) }}>
+      <Text style={{ fontFamily: f.displayBold, fontSize: 24, color: t.gold }}>{value}</Text>
+      <Text style={{ fontFamily: f.body, fontSize: 12, color: t.textFaint }}>
         {label}
       </Text>
     </View>
@@ -119,11 +123,12 @@ function Stat({ label, value }: { label: string; value: number }) {
 }
 
 function ExamCard({ data }: { data: Overview }) {
+  const { t } = useTheme();
   const e = data.exam;
   if (!e || !e.exam_date) {
     return (
       <Card title={s.overview.examTitle}>
-        <Text style={{ fontFamily: f.body, fontSize: 14, color: alpha(c.parchment, 0.6) }}>
+        <Text style={{ fontFamily: f.body, fontSize: 14, color: t.textFaint }}>
           {s.overview.examNone}
         </Text>
       </Card>
@@ -140,10 +145,10 @@ function ExamCard({ data }: { data: Overview }) {
 
   return (
     <Card title={s.overview.examTitle}>
-      <Text style={{ fontFamily: f.displayBold, fontSize: 18, color: c.goldLight }}>
+      <Text style={{ fontFamily: f.displayBold, fontSize: 18, color: t.goldSoft }}>
         {e.title ?? s.overview.examTitle}
       </Text>
-      <Text style={{ fontFamily: f.body, fontSize: 14, color: alpha(c.parchment, 0.7), marginTop: 8 }}>
+      <Text style={{ fontFamily: f.body, fontSize: 14, color: t.textDim, marginTop: 8 }}>
         {days === 0 ? s.overview.today : `${s.overview.examRemaining} ${days} ${s.overview.day}`}
         {e.place ? ` — ${e.place}` : ""}
       </Text>

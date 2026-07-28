@@ -3,8 +3,10 @@
 // نستعمل getDevicePushTokenAsync لا getExpoPushTokenAsync: الأولى تعيد رمز
 // FCM الخام الذي يفهمه خادمنا مباشرةً، والثانية تمرّ بخدمة Expo وتشترط
 // حساب EAS ومعرّف مشروع. لا حساب ولا وسيط.
+import { useEffect } from "react";
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
+import { router } from "expo-router";
 import { Platform } from "react-native";
 
 import { supabase } from "./supabase";
@@ -94,6 +96,49 @@ export async function disablePush(): Promise<PushState> {
   if (!token) return "off";
   await supabase.rpc("release_push_token", { p_token: token });
   return "off";
+}
+
+/** يحوّل رابط التنبيه إلى مسارٍ داخل التطبيق. */
+function routeFor(data: unknown): string {
+  const url = (data as { url?: unknown } | null)?.url;
+  if (typeof url !== "string") return "/(tabs)/inbox";
+  // الخادم يرسل مسارات الموقع (/dashboard/inbox)، والتطبيق تبويبات.
+  if (url.includes("/dashboard/profile")) return "/(tabs)/profile";
+  if (url.includes("/dashboard/inbox")) return "/(tabs)/inbox";
+  if (url.includes("/dashboard")) return "/(tabs)";
+  return "/(tabs)/inbox";
+}
+
+/**
+ * الضغط على التنبيه يفتح الشاشة المقصودة.
+ *
+ * حالتان لا واحدة: تنبيهٌ ضُغط والتطبيق يعمل، وتنبيهٌ **أقلع التطبيق منه
+ * وهو مغلق** — والثاني لا يمرّ بالمستمع أبدًا، فيُسأل عنه صراحةً عند
+ * الإقلاع. إغفاله يعني أنّ الضغط على تنبيهٍ والتطبيق مغلق يفتح الشاشة
+ * الأولى لا الإشعار، وهو أكثر الحالات وقوعًا.
+ */
+export function useNotificationRouting(): void {
+  useEffect(() => {
+    let handled = false;
+
+    void (async () => {
+      const initial = await Notifications.getLastNotificationResponseAsync();
+      if (initial && !handled) {
+        handled = true;
+        // نؤجّل قليلًا حتى يُركَّب المُوجّه، وإلّا ضاع الانتقال.
+        setTimeout(() => {
+          router.push(routeFor(initial.notification.request.content.data));
+        }, 300);
+      }
+    })();
+
+    const sub = Notifications.addNotificationResponseReceivedListener((response) => {
+      handled = true;
+      router.push(routeFor(response.notification.request.content.data));
+    });
+
+    return () => sub.remove();
+  }, []);
 }
 
 /** يُستدعى قبل تسجيل الخروج، وإلّا بقي الجهاز يستقبل تنبيهات من غادر. */
