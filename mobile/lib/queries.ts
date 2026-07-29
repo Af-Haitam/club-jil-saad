@@ -132,6 +132,14 @@ export type FeedItem = {
   image_url: string | null;
   at: string;
   unread: boolean;
+  /**
+   * صفّ `notifications` الذي جاء منه هذا العنصر — أو null.
+   *
+   * وnull ليست حالةً شاذّة: الإعلانات التي سبقت انضمام العضو تُعرض له بلا
+   * صفّ إشعارٍ أصلًا (التوزيع يحدث لحظة النشر). وما لا صفَّ له لا يُوسم
+   * «جديدًا» ولا يُعلَّم مقروءًا — لا شيء هناك ليُعلَّم.
+   */
+  notification_id: string | null;
 };
 
 /**
@@ -199,6 +207,7 @@ export async function getFeed(): Promise<FeedItem[]> {
       image_url: n.image_url,
       at: n.created_at,
       unread: !n.read_at,
+      notification_id: n.id,
     });
   }
 
@@ -221,6 +230,7 @@ export async function getFeed(): Promise<FeedItem[]> {
         image_url: p.image_url,
         at: p.published_at,
         unread: false,
+        notification_id: null,
       });
     }
   };
@@ -236,5 +246,14 @@ export async function markAllRead(userId: string): Promise<void> {
     .from("notifications")
     .update({ read_at: new Date().toISOString() })
     .eq("user_id", userId)
+    .is("read_at", null);
+}
+
+/** إشعارٌ واحد. سياسة `notif_update` تقصره على صفوف صاحبه أصلًا. */
+export async function markRead(notificationId: string): Promise<void> {
+  await supabase
+    .from("notifications")
+    .update({ read_at: new Date().toISOString() })
+    .eq("id", notificationId)
     .is("read_at", null);
 }

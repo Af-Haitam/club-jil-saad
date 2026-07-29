@@ -14,12 +14,12 @@ import { strings } from "@/lib/strings";
  */
 export async function answerQuestion(
   questionId: string,
-  optionId: string,
+  optionIds: string[],
 ): Promise<{ ok: boolean; error?: string }> {
   const supabase = await createClient();
   const { error } = await supabase.rpc("submit_answer", {
     p_question: questionId,
-    p_option: optionId,
+    p_options: optionIds,
   });
 
   if (error) return { ok: false, error: strings.dashboard.quizFailed };

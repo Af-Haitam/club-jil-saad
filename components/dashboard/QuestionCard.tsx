@@ -15,18 +15,25 @@ const ABJAD = ["أ", "ب", "ج", "د", "هـ", "و"];
 const d = strings.dashboard;
 
 export default function QuestionCard({ question }: { question: QuizQuestion }) {
-  const [picked, setPicked] = useState<string | null>(null);
+  const [picked, setPicked] = useState<string[]>([]);
   const [failed, setFailed] = useState(false);
   const [pending, startTransition] = useTransition();
 
   const answered = question.answer !== null;
   const locked = answered || question.expired;
-  const correctId = question.options.find((o) => o.is_correct)?.id ?? null;
-  const myId = question.answer?.option_id ?? null;
+  const multi = question.multi_select;
+  const mine = question.answer?.option_ids ?? [];
   const won = question.answer?.is_correct ?? false;
 
+  function toggle(id: string) {
+    // سؤال الجواب الواحد يستبدل، وسؤال الأجوبة يضيف ويحذف
+    setPicked((prev) =>
+      multi ? (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]) : [id],
+    );
+  }
+
   function send() {
-    if (!picked) return;
+    if (picked.length === 0) return;
     setFailed(false);
     startTransition(async () => {
       const res = await answerQuestion(question.id, picked);
@@ -43,11 +50,15 @@ export default function QuestionCard({ question }: { question: QuizQuestion }) {
         <p className="mt-2 text-sm leading-7 text-parchment/65">{question.body}</p>
       )}
 
+      {!locked && multi && (
+        <p className="mt-3 text-sm text-gold-light">{d.quizMultiHint}</p>
+      )}
+
       <ul className="mt-5 flex flex-col gap-2.5">
         {question.options.map((o, i) => {
-          const isMine = myId === o.id;
-          const isRight = correctId === o.id;
-          const isPicked = picked === o.id && !locked;
+          const isMine = mine.includes(o.id);
+          const isRight = o.is_correct === true;
+          const isPicked = picked.includes(o.id) && !locked;
 
           // بعد الإجابة: الصواب أخضر دائمًا وخطؤك أحمر — وإن أصبتَ فهما واحد
           let tone = "border-ink-line";
@@ -60,17 +71,18 @@ export default function QuestionCard({ question }: { question: QuizQuestion }) {
               <button
                 type="button"
                 disabled={locked || pending}
-                onClick={() => setPicked(o.id)}
+                onClick={() => toggle(o.id)}
                 aria-pressed={isPicked || isMine}
                 className={`flex w-full items-center gap-3 rounded-lg border px-4 py-3 text-start transition-colors ${tone} ${
                   locked ? "cursor-default" : "hover:border-gold/60"
                 }`}
               >
+                {/* مربّعٌ للمتعدّد ودائرةٌ للمفرد — الشكل يقول العدد */}
                 <span
                   aria-hidden="true"
-                  className={`flex size-7 shrink-0 items-center justify-center rounded-full border text-xs ${
-                    isPicked ? "border-gold bg-gold text-ink" : "border-gold/40 text-gold-light"
-                  }`}
+                  className={`flex size-7 shrink-0 items-center justify-center border text-xs ${
+                    multi ? "rounded-md" : "rounded-full"
+                  } ${isPicked ? "border-gold bg-gold text-ink" : "border-gold/40 text-gold-light"}`}
                 >
                   {ABJAD[i] ?? i + 1}
                 </span>
@@ -90,7 +102,7 @@ export default function QuestionCard({ question }: { question: QuizQuestion }) {
           <button
             type="button"
             onClick={send}
-            disabled={!picked || pending}
+            disabled={picked.length === 0 || pending}
             className="mt-3 w-full rounded-sm bg-gold px-6 py-3 font-bold text-ink transition-opacity hover:opacity-90 disabled:bg-gold/20 disabled:text-parchment/45"
           >
             {pending ? d.quizSending : d.quizSend}

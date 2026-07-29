@@ -580,7 +580,11 @@ export async function publishQuestion(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const parsed = questionSchema.safeParse(Object.fromEntries(formData));
+  // ‼ `Object.fromEntries` تحتفظ بآخر قيمةٍ للمفتاح المكرَّر وتُسقط ما قبلها.
+  //   ومربّعات الصواب كلّها باسم `correct`، فلو مرّت من هناك لَوصل آخرها
+  //   وحده — سؤالٌ بثلاثة أجوبةٍ يُنشر بجوابٍ واحد، بلا خطأٍ ولا تحذير.
+  const raw = { ...Object.fromEntries(formData), correct: formData.getAll("correct") };
+  const parsed = questionSchema.safeParse(raw);
   if (!parsed.success) return { ok: false, fieldErrors: zodFieldErrors(parsed.error) };
   const v = parsed.data;
 
@@ -601,6 +605,9 @@ export async function publishQuestion(
       halaqa_id: v.audience_type === "halaqa" ? v.halaqa_id : null,
       member_id: v.audience_type === "member" ? v.member_id : null,
       closes_at: v.closes_at ? new Date(v.closes_at).toISOString() : null,
+      // يُشتقّ من عدد ما عُلّم صوابًا: المشرف لا يضبط مفتاحًا زائدًا،
+      // والعضو يرى مربّعات بدل دوائر فيعرف أنّ عليه اختيار أكثر من واحد.
+      multi_select: v.correct.length > 1,
       author_id: user.id,
       status: "draft",
     })
@@ -614,7 +621,11 @@ export async function publishQuestion(
 
   const texts = [v.option_1, v.option_2, v.option_3, v.option_4, v.option_5, v.option_6];
   const options = texts
-    .map((body, i) => ({ body: body?.trim() ?? "", position: i + 1, correct: i + 1 === v.correct }))
+    .map((body, i) => ({
+      body: body?.trim() ?? "",
+      position: i + 1,
+      correct: v.correct.includes(i + 1),
+    }))
     .filter((o) => o.body.length > 0);
 
   const { error: optError } = await supabase.from("question_options").insert(

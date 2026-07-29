@@ -121,7 +121,12 @@ export const questionSchema = z
     body: optText,
     explanation: optText,
     points: reqNum("حدّد النقاط", 1, 10),
-    correct: reqNum("حدّد الإجابة الصحيحة", 1, 6),
+    // مواضع الصواب. مصفوفةٌ لا رقم: المشرف قد يعلّم أكثر من اختيار.
+    // ولا يُقرأ بـ`Object.fromEntries` — تلك تحتفظ بآخر قيمةٍ فقط وتُسقط
+    // البقيّة بصمت، فيُنشر سؤالٌ بجوابٍ واحدٍ والمشرف يظنّه ثلاثة.
+    correct: z
+      .array(z.coerce.number().int().min(1).max(6))
+      .min(1, "حدّد الإجابة الصحيحة"),
     closes_at: optText,
     audience_type: z.enum(["both", "hifz", "club", "halaqa", "member"], "اختر الجمهور"),
     halaqa_id: optText,
@@ -146,9 +151,13 @@ export const questionSchema = z
     if (filled < 2) {
       ctx.addIssue({ code: "custom", path: ["option_2"], message: "اكتب اختيارين على الأقلّ" });
     }
-    // الصواب يشير إلى خانةٍ فارغة — يقع حين يُمسح اختيارٌ بعد اختياره صوابًا
-    if (!opts[v.correct - 1]?.trim()) {
+    // صوابٌ يشير إلى خانةٍ فارغة — يقع حين يُمسح اختيارٌ بعد تعليمه صوابًا
+    if (v.correct.some((n) => !opts[n - 1]?.trim())) {
       ctx.addIssue({ code: "custom", path: ["correct"], message: "الإجابة الصحيحة تشير إلى خانة فارغة" });
+    }
+    // كلّ الاختيارات صواب = سؤالٌ لا يميّز شيئًا
+    if (filled > 0 && v.correct.length >= filled) {
+      ctx.addIssue({ code: "custom", path: ["correct"], message: "اترك خيارًا خاطئًا واحدًا على الأقلّ" });
     }
     // فجوةٌ بين الاختيارات تُربك ترقيم «أ ب ج»
     const firstEmpty = opts.findIndex((x) => !x?.trim());

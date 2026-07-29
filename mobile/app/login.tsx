@@ -69,23 +69,18 @@ export default function Login() {
         contentContainerStyle={{ flexGrow: 1, justifyContent: "center", padding: 24 }}
         keyboardShouldPersistTaps="handled"
       >
+        {/* الشعار والاسم صورةٌ واحدة لا صورةٌ وسطرُ نصّ.
+            كانت الريشة ٩٦ بكسلًا فوق كلمةٍ بحجم ٣٠، فبدت الريشة أصغر من
+            اسمها — والنسبة بينهما ليست خيارًا لنا أصلًا، هي في ملفّ الشعار.
+            وبصورةٍ واحدةٍ تُحفظ النسبة كما رسمها صاحبها، ويكفي أن نعطيها
+            عرضًا فتتبعه بارتفاعها. والمصدر ٢٠٠٠ بكسل، فلا تفقد حدّتها. */}
         <View style={{ alignItems: "center", marginBottom: 32 }}>
           <Image
-            source={require("../assets/adaptive-foreground.png")}
-            style={{ width: 96, height: 96 }}
+            source={require("../assets/logo-full.png")}
+            style={{ width: "72%", aspectRatio: 2000 / 1488 }}
             resizeMode="contain"
+            accessibilityLabel={s.brand}
           />
-          <Text
-            style={{
-              fontFamily: f.logo,
-              fontSize: 30,
-              lineHeight: 48,
-              color: t.goldSoft,
-              marginTop: 4,
-            }}
-          >
-            {s.brand}
-          </Text>
         </View>
 
         <View

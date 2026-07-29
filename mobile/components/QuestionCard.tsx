@@ -7,6 +7,10 @@
 // والاختيار على خطوتين عمدًا. الإجابة لا رجعة فيها، ولمسةٌ خاطئة على
 // شاشةٍ في جيبٍ مهتزّ تحرق المحاولة الوحيدة. فالضغطة الأولى تُعلِّم،
 // والثانية — على زرٍّ منفصل مكتوبٍ عليه ما سيحدث — تُرسل.
+//
+// وبعد الإجابة يمكث خمس ثوانٍ ثمّ ينسحب: القراءة تكفي، والبطاقة المُجاب
+// عنها تُزاحم جدول التتبّع كلّ يومٍ بلا فائدة. وما انسحب يبقى في
+// «الأسئلة السابقة» بشرحه كاملًا.
 import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Animated, Pressable, Text, View } from "react-native";
 
@@ -20,31 +24,60 @@ import Card from "./Card";
 /** أبجد هوّز — ترقيم الاختيارات كما يُرقَّم في الكتب العربية. */
 const ABJAD = ["أ", "ب", "ج", "د", "هـ", "و"];
 
+/** ما يمكث به الكشف قبل أن ينسحب. خمسٌ تكفي لقراءة سطرٍ أو سطرين. */
+const LINGER_MS = 5000;
+
 export default function QuestionCard({
   question,
+  autoDismiss = false,
   onAnswered,
+  onDismiss,
 }: {
   question: Question;
+  /** يُشغَّل عدّاد الانسحاب فقط لمن أجاب الآن — لا لمن فتح التطبيق فوجده مُجابًا. */
+  autoDismiss?: boolean;
   onAnswered: () => void;
+  onDismiss?: () => void;
 }) {
   const { t } = useTheme();
-  const [picked, setPicked] = useState<string | null>(null);
+  const [picked, setPicked] = useState<string[]>([]);
   const [sending, setSending] = useState(false);
   const [failed, setFailed] = useState(false);
 
   const answered = question.answer !== null;
   const locked = answered || question.expired;
+  const multi = question.multi_select;
 
-  // الكشف يظهر بهدوء — الوميض المفاجئ يوحي بلعبةٍ لا بدرس
   const reveal = useRef(new Animated.Value(answered ? 1 : 0)).current;
+  const fade = useRef(new Animated.Value(1)).current;
+
   useEffect(() => {
     if (answered) {
       Animated.timing(reveal, { toValue: 1, duration: 320, useNativeDriver: true }).start();
     }
   }, [answered, reveal]);
 
+  useEffect(() => {
+    if (!answered || !autoDismiss || !onDismiss) return;
+    const timer = setTimeout(() => {
+      Animated.timing(fade, { toValue: 0, duration: 420, useNativeDriver: true }).start(
+        ({ finished }) => {
+          if (finished) onDismiss();
+        },
+      );
+    }, LINGER_MS);
+    return () => clearTimeout(timer);
+  }, [answered, autoDismiss, onDismiss, fade]);
+
+  const toggle = (id: string) => {
+    // سؤال الجواب الواحد يستبدل، وسؤال الأجوبة يضيف ويحذف
+    setPicked((prev) =>
+      multi ? (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]) : [id],
+    );
+  };
+
   const send = async () => {
-    if (!picked || sending) return;
+    if (picked.length === 0 || sending) return;
     setSending(true);
     setFailed(false);
     try {
@@ -56,253 +89,253 @@ export default function QuestionCard({
     }
   };
 
-  const correctId = question.options.find((o) => o.is_correct)?.id ?? null;
-  const myId = question.answer?.option_id ?? null;
+  const mine = question.answer?.option_ids ?? [];
   const won = question.answer?.is_correct ?? false;
 
   return (
-    <Card title={s.quiz.title}>
-      <Text
-        style={{
-          fontFamily: f.displayBold,
-          fontSize: 19,
-          lineHeight: 36,
-          color: t.text,
-        }}
-      >
-        {question.title}
-      </Text>
-
-      {question.body ? (
-        <Text
-          style={{
-            fontFamily: f.body,
-            fontSize: 14,
-            lineHeight: 28,
-            color: t.textDim,
-            marginTop: 8,
-          }}
-        >
-          {question.body}
+    <Animated.View style={{ opacity: fade }}>
+      <Card title={s.quiz.title}>
+        <Text style={{ fontFamily: f.displayBold, fontSize: 19, lineHeight: 36, color: t.text }}>
+          {question.title}
         </Text>
-      ) : null}
 
-      <View style={{ marginTop: 16, gap: 9 }}>
-        {question.options.map((o, i) => {
-          const isMine = myId === o.id;
-          const isRight = correctId === o.id;
-          const isPicked = picked === o.id && !locked;
+        {question.body ? (
+          <Text
+            style={{
+              fontFamily: f.body,
+              fontSize: 14,
+              lineHeight: 28,
+              color: t.textDim,
+              marginTop: 8,
+            }}
+          >
+            {question.body}
+          </Text>
+        ) : null}
 
-          // بعد الإجابة: الصواب أخضر دائمًا، وخطؤك أحمر. وإن أصبتَ فهما واحد.
-          let border = t.line;
-          let bg = "transparent";
-          let mark: string | null = null;
-          if (locked && isRight) {
-            border = t.green;
-            bg = alpha(t.green, 0.14);
-            mark = "✓";
-          } else if (locked && isMine) {
-            border = t.red;
-            bg = alpha(t.red, 0.14);
-            mark = "✕";
-          } else if (isPicked) {
-            border = t.gold;
-            bg = alpha(t.gold, 0.12);
-          }
+        {/* يُقال قبل الاختيار لا بعده — «اختر ما ينطبق» بعد الإرسال بلا معنى */}
+        {!locked && multi ? (
+          <Text style={{ fontFamily: f.body, fontSize: 12, color: t.goldSoft, marginTop: 10 }}>
+            {s.quiz.multiHint}
+          </Text>
+        ) : null}
 
-          return (
-            <Pressable
-              key={o.id}
-              disabled={locked || sending}
-              onPress={() => setPicked(o.id)}
-              accessibilityRole="radio"
-              accessibilityState={{ selected: isPicked || isMine, disabled: locked }}
-              accessibilityLabel={`${ABJAD[i] ?? i + 1} — ${o.body}`}
-              style={({ pressed }) => ({
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 12,
-                borderWidth: 1,
-                borderColor: border,
-                backgroundColor: bg,
-                borderRadius: 11,
-                paddingVertical: 13,
-                paddingHorizontal: 14,
-                opacity: pressed && !locked ? 0.7 : 1,
-              })}
-            >
-              <View
-                style={{
-                  width: 27,
-                  height: 27,
-                  borderRadius: 14,
-                  borderWidth: 1,
-                  borderColor: isPicked ? t.gold : alpha(t.gold, 0.38),
-                  backgroundColor: isPicked ? t.gold : "transparent",
+        <View style={{ marginTop: 16, gap: 9 }}>
+          {question.options.map((o, i) => {
+            const isMine = mine.includes(o.id);
+            const isRight = o.is_correct === true;
+            const isPicked = picked.includes(o.id) && !locked;
+
+            // بعد الإجابة: كلّ صوابٍ أخضر، وكلّ ما اخترتَه خطأً أحمر
+            let border = t.line;
+            let bg = "transparent";
+            let mark: string | null = null;
+            if (locked && isRight) {
+              border = t.green;
+              bg = alpha(t.green, 0.14);
+              mark = "✓";
+            } else if (locked && isMine) {
+              border = t.red;
+              bg = alpha(t.red, 0.14);
+              mark = "✕";
+            } else if (isPicked) {
+              border = t.gold;
+              bg = alpha(t.gold, 0.12);
+            }
+
+            return (
+              <Pressable
+                key={o.id}
+                disabled={locked || sending}
+                onPress={() => toggle(o.id)}
+                accessibilityRole={multi ? "checkbox" : "radio"}
+                accessibilityState={{ checked: isPicked || isMine, disabled: locked }}
+                accessibilityLabel={`${ABJAD[i] ?? i + 1} — ${o.body}`}
+                style={({ pressed }) => ({
+                  flexDirection: "row",
                   alignItems: "center",
-                  justifyContent: "center",
-                }}
+                  gap: 12,
+                  borderWidth: 1,
+                  borderColor: border,
+                  backgroundColor: bg,
+                  borderRadius: 11,
+                  paddingVertical: 13,
+                  paddingHorizontal: 14,
+                  opacity: pressed && !locked ? 0.7 : 1,
+                })}
               >
-                <Text
+                <View
                   style={{
-                    fontFamily: f.bodyBold,
-                    fontSize: 12,
-                    color: isPicked ? t.onGold : t.goldSoft,
+                    width: 27,
+                    height: 27,
+                    // مربّعٌ للمتعدّد ودائرةٌ للمفرد — شكلٌ يقول العدد قبل
+                    // أن يُقرأ سطر التنبيه تحته
+                    borderRadius: multi ? 7 : 14,
+                    borderWidth: 1,
+                    borderColor: isPicked ? t.gold : alpha(t.gold, 0.38),
+                    backgroundColor: isPicked ? t.gold : "transparent",
+                    alignItems: "center",
+                    justifyContent: "center",
                   }}
                 >
-                  {ABJAD[i] ?? String(i + 1)}
-                </Text>
-              </View>
+                  <Text
+                    style={{
+                      fontFamily: f.bodyBold,
+                      fontSize: 12,
+                      color: isPicked ? t.onGold : t.goldSoft,
+                    }}
+                  >
+                    {ABJAD[i] ?? String(i + 1)}
+                  </Text>
+                </View>
 
+                <Text
+                  style={{ flex: 1, fontFamily: f.body, fontSize: 15, lineHeight: 28, color: t.text }}
+                >
+                  {o.body}
+                </Text>
+
+                {mark ? (
+                  <Text
+                    style={{ fontFamily: f.bodyBold, fontSize: 15, color: isRight ? t.green : t.red }}
+                  >
+                    {mark}
+                  </Text>
+                ) : null}
+              </Pressable>
+            );
+          })}
+        </View>
+
+        {!locked ? (
+          <>
+            <Text
+              style={{
+                fontFamily: f.body,
+                fontSize: 12,
+                color: t.textFaint,
+                marginTop: 13,
+                textAlign: "center",
+              }}
+            >
+              {s.quiz.once}
+            </Text>
+
+            {failed ? (
               <Text
                 style={{
-                  flex: 1,
                   fontFamily: f.body,
-                  fontSize: 15,
-                  lineHeight: 28,
-                  color: t.text,
+                  fontSize: 13,
+                  color: t.red,
+                  marginTop: 9,
+                  textAlign: "center",
                 }}
               >
-                {o.body}
+                {s.quiz.failed}
               </Text>
+            ) : null}
 
-              {mark ? (
+            <Pressable
+              onPress={send}
+              disabled={picked.length === 0 || sending}
+              accessibilityRole="button"
+              style={({ pressed }) => ({
+                marginTop: 12,
+                borderRadius: 4,
+                paddingVertical: 14,
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: picked.length ? t.gold : alpha(t.gold, 0.16),
+                opacity: pressed ? 0.75 : 1,
+              })}
+            >
+              {sending ? (
+                <ActivityIndicator color={t.onGold} />
+              ) : (
                 <Text
                   style={{
                     fontFamily: f.bodyBold,
                     fontSize: 15,
-                    color: isRight ? t.green : t.red,
+                    color: picked.length ? t.onGold : t.textFaint,
                   }}
                 >
-                  {mark}
+                  {s.quiz.send}
+                </Text>
+              )}
+            </Pressable>
+          </>
+        ) : null}
+
+        {answered ? (
+          <Animated.View style={{ opacity: reveal, marginTop: 15 }}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 9,
+                borderRadius: 10,
+                paddingVertical: 11,
+                paddingHorizontal: 13,
+                backgroundColor: alpha(won ? t.green : t.red, 0.13),
+              }}
+            >
+              <Text style={{ fontFamily: f.bodyBold, fontSize: 16, color: won ? t.green : t.red }}>
+                {won ? "✓" : "✕"}
+              </Text>
+              <Text
+                style={{ flex: 1, fontFamily: f.bodyBold, fontSize: 14, color: won ? t.green : t.red }}
+              >
+                {won ? s.quiz.correct : s.quiz.wrong}
+              </Text>
+              {won && question.answer ? (
+                <Text style={{ fontFamily: f.displayBold, fontSize: 14, color: t.green }}>
+                  {pointsLabel(question.answer.points)}
                 </Text>
               ) : null}
-            </Pressable>
-          );
-        })}
-      </View>
+            </View>
 
-      {/* ── ما قبل الإرسال ── */}
-      {!locked ? (
-        <>
+            {question.explanation ? (
+              <Text
+                style={{
+                  fontFamily: f.body,
+                  fontSize: 14,
+                  lineHeight: 30,
+                  color: t.textDim,
+                  marginTop: 12,
+                }}
+              >
+                {question.explanation}
+              </Text>
+            ) : null}
+
+            {autoDismiss ? (
+              <Text
+                style={{
+                  fontFamily: f.body,
+                  fontSize: 11,
+                  color: t.textFaint,
+                  marginTop: 12,
+                  textAlign: "center",
+                }}
+              >
+                {s.quiz.movingToArchive}
+              </Text>
+            ) : null}
+          </Animated.View>
+        ) : question.expired ? (
           <Text
             style={{
               fontFamily: f.body,
-              fontSize: 12,
+              fontSize: 13,
               color: t.textFaint,
-              marginTop: 13,
+              marginTop: 14,
               textAlign: "center",
             }}
           >
-            {s.quiz.once}
+            {s.quiz.closed}
           </Text>
-
-          {failed ? (
-            <Text
-              style={{
-                fontFamily: f.body,
-                fontSize: 13,
-                color: t.red,
-                marginTop: 9,
-                textAlign: "center",
-              }}
-            >
-              {s.quiz.failed}
-            </Text>
-          ) : null}
-
-          <Pressable
-            onPress={send}
-            disabled={!picked || sending}
-            accessibilityRole="button"
-            style={({ pressed }) => ({
-              marginTop: 12,
-              borderRadius: 4,
-              paddingVertical: 14,
-              alignItems: "center",
-              justifyContent: "center",
-              backgroundColor: picked ? t.gold : alpha(t.gold, 0.16),
-              opacity: pressed ? 0.75 : 1,
-            })}
-          >
-            {sending ? (
-              <ActivityIndicator color={t.onGold} />
-            ) : (
-              <Text
-                style={{
-                  fontFamily: f.bodyBold,
-                  fontSize: 15,
-                  color: picked ? t.onGold : t.textFaint,
-                }}
-              >
-                {s.quiz.send}
-              </Text>
-            )}
-          </Pressable>
-        </>
-      ) : null}
-
-      {/* ── ما بعدها ── */}
-      {answered ? (
-        <Animated.View style={{ opacity: reveal, marginTop: 15 }}>
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 9,
-              borderRadius: 10,
-              paddingVertical: 11,
-              paddingHorizontal: 13,
-              backgroundColor: alpha(won ? t.green : t.red, 0.13),
-            }}
-          >
-            <Text style={{ fontFamily: f.bodyBold, fontSize: 16, color: won ? t.green : t.red }}>
-              {won ? "✓" : "✕"}
-            </Text>
-            <Text
-              style={{
-                flex: 1,
-                fontFamily: f.bodyBold,
-                fontSize: 14,
-                color: won ? t.green : t.red,
-              }}
-            >
-              {won ? s.quiz.correct : s.quiz.wrong}
-            </Text>
-            {won && question.answer ? (
-              <Text style={{ fontFamily: f.displayBold, fontSize: 14, color: t.green }}>
-                {pointsLabel(question.answer.points)}
-              </Text>
-            ) : null}
-          </View>
-
-          {question.explanation ? (
-            <Text
-              style={{
-                fontFamily: f.body,
-                fontSize: 14,
-                lineHeight: 30,
-                color: t.textDim,
-                marginTop: 12,
-              }}
-            >
-              {question.explanation}
-            </Text>
-          ) : null}
-        </Animated.View>
-      ) : question.expired ? (
-        <Text
-          style={{
-            fontFamily: f.body,
-            fontSize: 13,
-            color: t.textFaint,
-            marginTop: 14,
-            textAlign: "center",
-          }}
-        >
-          {s.quiz.closed}
-        </Text>
-      ) : null}
-    </Card>
+        ) : null}
+      </Card>
+    </Animated.View>
   );
 }

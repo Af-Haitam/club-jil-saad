@@ -4,7 +4,8 @@ import { FlatList, Image, Pressable, RefreshControl, Text, View } from "react-na
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useSession } from "../../lib/session";
-import { getFeed, markAllRead, type FeedItem } from "../../lib/queries";
+import { getFeed, markAllRead, markRead, type FeedItem } from "../../lib/queries";
+import { refreshUnread } from "../../lib/unread";
 import { s } from "../../lib/strings";
 import { f, alpha } from "../../lib/theme";
 import { useTheme } from "../../lib/useTheme";
@@ -40,6 +41,17 @@ export default function InboxScreen() {
 
   const anyUnread = (items ?? []).some((n) => n.unread);
 
+  // تفاؤليًّا: الشارة تختفي تحت الإصبع، والكتابة تلحق. وإن فشلت الكتابة
+  // عاد الوسم عند أوّل تحديث — ولا شيء ضاع، فالقراءة ليست فعلًا خطيرًا.
+  const markOne = useCallback(async (item: FeedItem) => {
+    if (!item.notification_id) return;
+    setItems((prev) =>
+      (prev ?? []).map((n) => (n.key === item.key ? { ...n, unread: false } : n)),
+    );
+    await markRead(item.notification_id);
+    refreshUnread();
+  }, []);
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: t.bg }} edges={["top"]}>
       <View
@@ -61,6 +73,7 @@ export default function InboxScreen() {
               // تفاؤليًّا: الشارة تختفي فورًا، والكتابة تلحق.
               setItems((prev) => (prev ?? []).map((n) => ({ ...n, unread: false })));
               await markAllRead(session.user.id);
+              refreshUnread();
             }}
           >
             <Text style={{ fontFamily: f.body, fontSize: 13, color: t.textFaint }}>
@@ -93,24 +106,30 @@ export default function InboxScreen() {
             </Text>
           )
         }
-        renderItem={({ item }) => <PostCard n={item} />}
+        renderItem={({ item }) => <PostCard n={item} onRead={markOne} />}
       />
     </SafeAreaView>
   );
 }
 
-function PostCard({ n }: { n: FeedItem }) {
+function PostCard({ n, onRead }: { n: FeedItem; onRead: (item: FeedItem) => void }) {
   const { t } = useTheme();
   const unread = n.unread;
   return (
-    <View
-      style={{
+    <Pressable
+      // ما لا صفَّ إشعارٍ له لا شيء فيه ليُقرأ — فلا يستجيب للّمس أصلًا،
+      // ولا يومض وميضةً كاذبة توحي بأنّ شيئًا حدث.
+      onPress={unread && n.notification_id ? () => onRead(n) : undefined}
+      accessibilityRole={unread && n.notification_id ? "button" : undefined}
+      accessibilityLabel={unread ? `${s.inbox.unread} — ${n.title ?? ""}` : undefined}
+      style={({ pressed }) => ({
         borderWidth: 1,
         borderColor: unread ? alpha(t.gold, 0.45) : alpha(t.gold, 0.18),
         backgroundColor: t.surface,
         borderRadius: 16,
         overflow: "hidden",
-      }}
+        opacity: pressed && unread ? 0.7 : 1,
+      })}
     >
       {n.image_url ? (
         // نسبة 3:2 ثابتة كما في الموقع — مقيسة على صور النادي الحقيقية،
@@ -162,7 +181,7 @@ function PostCard({ n }: { n: FeedItem }) {
           </Text>
         ) : null}
       </View>
-    </View>
+    </Pressable>
   );
 }
 

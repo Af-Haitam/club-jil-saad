@@ -19,11 +19,13 @@ export type Question = {
   body: string | null;
   points: number;
   status: "open" | "closed";
+  /** أكثر من جوابٍ صحيح. عَلَمٌ صريح — لو استُنتج من عدد الصواب لأفشاه. */
+  multi_select: boolean;
   published_at: string | null;
   closes_at: string | null;
   expired: boolean;
   explanation: string | null;
-  answer: { option_id: string; is_correct: boolean; points: number } | null;
+  answer: { option_ids: string[]; is_correct: boolean; points: number } | null;
   options: Option[];
 };
 
@@ -63,17 +65,17 @@ export async function getBoard(): Promise<BoardRow[]> {
 export type SubmitResult = {
   is_correct: boolean;
   points: number;
-  correct_id: string;
+  correct_ids: string[];
   explanation: string | null;
 };
 
 export async function submitAnswer(
   questionId: string,
-  optionId: string,
+  optionIds: string[],
 ): Promise<SubmitResult> {
   const { data, error } = await supabase.rpc("submit_answer", {
     p_question: questionId,
-    p_option: optionId,
+    p_options: optionIds,
   });
   if (error) throw new Error(error.message);
   return data as SubmitResult;

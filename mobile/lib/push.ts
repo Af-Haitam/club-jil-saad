@@ -141,6 +141,40 @@ export function useNotificationRouting(): void {
   }, []);
 }
 
+/**
+ * الرمز يتبع من دخل.
+ *
+ * وُجدت الحاجة إليه على جهازٍ حقيقيّ: الرمز كان مسجَّلًا باسم صاحب الجهاز
+ * الأوّل، ثمّ دخل حسابٌ آخر فلم ينتقل الرمز — لأنّ `claim_push_token` لا
+ * يعمل إلّا عند الضغط على «فعّل التنبيهات». فصار الجهاز:
+ *
+ *   • لا يستقبل شيئًا للحساب الداخل — وهو أهون الأمرين
+ *   • **يستقبل إشعارات الحساب الأوّل الخاصّة** وهو غير مسجَّلٍ به أصلًا
+ *
+ * والثاني تسريبٌ لا عطل. فيُنتزع الرمز كلّما تغيّر المستخدم، بشرط أن يكون
+ * الإذن ممنوحًا سلفًا — لا نسأل أحدًا إذنًا لم يطلبه.
+ */
+export function usePushOwnership(userId: string | undefined): void {
+  useEffect(() => {
+    if (!userId) return;
+    let alive = true;
+
+    void (async () => {
+      const token = await currentToken();
+      // لا رمز = لا إذن أو محاكٍ. لا شيء يُنتزع، ولا سؤال يُطرح.
+      if (!token || !alive) return;
+      await supabase.rpc("claim_push_token", {
+        p_token: token,
+        p_platform: Platform.OS === "ios" ? "ios" : "android",
+      });
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, [userId]);
+}
+
 /** يُستدعى قبل تسجيل الخروج، وإلّا بقي الجهاز يستقبل تنبيهات من غادر. */
 export async function releaseOnSignOut(): Promise<void> {
   try {

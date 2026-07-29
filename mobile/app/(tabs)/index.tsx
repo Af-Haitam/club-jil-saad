@@ -24,6 +24,9 @@ export default function OverviewScreen() {
   );
   const [refreshing, setRefreshing] = useState(false);
   const [failed, setFailed] = useState(false);
+  /** ما أُجيب عنه في هذه الجلسة — يمكث ليُقرأ كشفه ثمّ ينسحب. */
+  const [justAnswered, setJustAnswered] = useState<string | null>(null);
+  const [dismissed, setDismissed] = useState<string[]>([]);
 
   // المسابقة تُحمَّل مستقلّةً عن المتابعة: هجرة 0008 قد لا تكون مطبَّقة
   // بعد على قاعدةٍ ما، فلا يجوز أن يُسقط غيابُها شبكةَ الأسابيع معه.
@@ -61,9 +64,15 @@ export default function OverviewScreen() {
 
   const firstName = (profile?.full_name ?? "").trim().split(/\s+/)[0];
 
-  // الأحدث ممّا لم ينقضِ وقته — واحدٌ فقط. عرض عدّة أسئلةٍ معًا يحوّل
-  // الشاشة إلى استمارة، والصفحة صفحة متابعةٍ قبل كلّ شيء.
-  const openQuestion = quiz?.questions.find((q) => !q.expired) ?? null;
+  // الأحدث ممّا لم ينقضِ وقته ولم يُجب عنه — واحدٌ فقط. عرض عدّة أسئلةٍ
+  // معًا يحوّل الشاشة إلى استمارة، والصفحة صفحة متابعةٍ قبل كلّ شيء.
+  //
+  // ويُستثنى ما أُجيب عنه قبل قليل: يبقى ظاهرًا ليُقرأ كشفه ثمّ ينسحب
+  // بنفسه. ولولا هذا الاستثناء لاختفى في اللحظة نفسها ولم يرَ أحدٌ صوابه.
+  const openQuestion =
+    quiz?.questions.find(
+      (q) => !q.expired && !dismissed.includes(q.id) && (q.answer === null || q.id === justAnswered),
+    ) ?? null;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: t.bg }} edges={["top"]}>
@@ -90,7 +99,15 @@ export default function OverviewScreen() {
         {/* السؤال أوّلًا: له وقتٌ ينقضي، وما سواه في الصفحة باقٍ.
             ويبقى معروضًا بعد الإجابة ليُقرأ الشرح، فلا يختفي بمجرّد الضغط. */}
         {openQuestion ? (
-          <QuestionCard question={openQuestion} onAnswered={loadQuiz} />
+          <QuestionCard
+            question={openQuestion}
+            autoDismiss={openQuestion.id === justAnswered}
+            onAnswered={() => {
+              setJustAnswered(openQuestion.id);
+              void loadQuiz();
+            }}
+            onDismiss={() => setDismissed((prev) => [...prev, openQuestion.id])}
+          />
         ) : null}
 
         {data ? (

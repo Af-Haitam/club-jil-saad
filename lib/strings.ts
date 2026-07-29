@@ -187,6 +187,7 @@ export const strings = {
     quizSend: "أرسل إجابتي",
     quizSending: "جارٍ الإرسال…",
     quizOnce: "لك محاولة واحدة، فتأنَّ",
+    quizMultiHint: "لهذا السؤال أكثر من جوابٍ صحيح — اختر كلّ ما تراه صوابًا",
     quizCorrect: "إجابة صحيحة",
     quizWrong: "إجابة غير صحيحة",
     quizClosed: "أُغلق هذا السؤال",
@@ -446,7 +447,8 @@ export const strings = {
     questionExplanation: "الشرح بعد الإجابة (اختياري)",
     questionExplanationPh: "لِمَ كان هذا هو الصواب — يُعرض للعضو بعد أن يجيب",
     questionOptions: "الاختيارات",
-    questionOptionsHint: "اثنان على الأقلّ وستّة على الأكثر، وعلّم الصواب بالدائرة",
+    questionOptionsHint:
+      "اثنان على الأقلّ وستّة على الأكثر. علّم كلّ جوابٍ صحيح — وإن علّمتَ أكثر من واحد لزم العضوَ اختيارُها كلّها.",
     questionOptionPh: "الاختيار",
     questionCorrect: "الصواب",
     questionPoints: "نقاط الإجابة الصحيحة",

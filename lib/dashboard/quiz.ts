@@ -18,11 +18,13 @@ export type QuizQuestion = {
   body: string | null;
   points: number;
   status: string;
+  /** أكثر من جوابٍ صحيح — عَلَمٌ صريح في القاعدة لا استنتاجٌ من العدد. */
+  multi_select: boolean;
   published_at: string | null;
   closes_at: string | null;
   expired: boolean;
   explanation: string | null;
-  answer: { option_id: string; is_correct: boolean; points: number } | null;
+  answer: { option_ids: string[]; is_correct: boolean; points: number } | null;
   options: QuizOption[];
 };
 

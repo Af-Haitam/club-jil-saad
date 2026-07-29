@@ -9,11 +9,16 @@ import { f } from "../../lib/theme";
 import { useTheme } from "../../lib/useTheme";
 import { useUnread } from "../../lib/unread";
 import { useSession } from "../../lib/session";
+import { usePushOwnership } from "../../lib/push";
 
 export default function TabsLayout() {
   const { t } = useTheme();
   const { session, loading } = useSession();
   const unread = useUnread();
+
+  // الرمز يتبع من دخل: بدونه يبقى الجهاز مسجَّلًا باسم آخر من فعّل
+  // التنبيهات عليه، فيستقبل إشعاراته الخاصّة ولو دخل غيره.
+  usePushOwnership(session?.user.id);
 
   // تسجيل الخروج يُفرِغ الجلسة، لكنّ العضو يكون واقفًا على «ملفي» — ولا شيء
   // كان ينقله. فيبقى داخل التطبيق بلا جلسة، يرى شاشاتٍ فارغة ولا يفهم لماذا.

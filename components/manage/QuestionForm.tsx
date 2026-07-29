@@ -77,16 +77,17 @@ export default function QuestionForm({ isAdmin, halaqat, members }: QuestionForm
 
           {Array.from({ length: count }, (_, i) => (
             <div key={i} className="flex items-center gap-3">
+              {/* مربّعٌ لا دائرة: المشرف يعلّم ما شاء من الأجوبة صوابًا،
+                  ويشتقّ الخادم من عددها أنّ السؤال متعدّد الإجابة. */}
               <label
                 className="flex shrink-0 cursor-pointer items-center gap-2"
                 title={m.questionCorrect}
               >
                 <input
-                  type="radio"
+                  type="checkbox"
                   name="correct"
                   value={i + 1}
                   defaultChecked={i === 0}
-                  required
                   className="size-4 accent-tick-green"
                 />
                 <span className="w-4 text-sm text-gold/80">{ABJAD[i]}</span>

@@ -4,7 +4,8 @@
 // فمن كان الحادي عشر يقرأ «11» لا فراغًا. ولوحة المتصدّرين تكشف أسماء
 // أعضاءٍ آخرين — وهو الشيء الوحيد في التطبيق كلّه الذي يفعل ذلك، ولذلك
 // تمرّ عبر دالّةٍ مُعرِّفة تعيد الاسم والنقاط فقط، لا صفَّ الملفّ كلّه.
-import { Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
+import { router } from "expo-router";
 
 import type { BoardRow, Score } from "../lib/quiz";
 import { s, pointsLabel } from "../lib/strings";
@@ -53,6 +54,18 @@ export default function ScoreCard({ score, board }: { score: Score; board: Board
           </View>
         ) : null}
       </View>
+
+      {/* المدخل إلى الأرشيف هنا لا في تبويبٍ رابع: من يبحث عن سؤالٍ مضى
+          يبحث عنه عند نقاطه، وشريط التبويبات أضيق من أن يحمل خامسًا. */}
+      <Pressable
+        onPress={() => router.push("/questions")}
+        accessibilityRole="button"
+        style={({ pressed }) => ({ marginTop: 14, opacity: pressed ? 0.6 : 1 })}
+      >
+        <Text style={{ fontFamily: f.body, fontSize: 13, color: t.gold }}>
+          {s.quiz.archiveLink} ←
+        </Text>
+      </Pressable>
 
       <View style={{ height: 1, backgroundColor: t.line, marginVertical: 16 }} />
 
