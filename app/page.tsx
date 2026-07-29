@@ -1,6 +1,7 @@
 import { Fragment } from "react";
 import Navbar from "@/components/Navbar";
 import MotionProvider from "@/components/MotionProvider";
+import StructuredData from "@/components/StructuredData";
 import Hero from "@/components/sections/Hero";
 import About from "@/components/sections/About";
 import HifzProgram from "@/components/sections/HifzProgram";
@@ -63,6 +64,7 @@ export default async function Home() {
 
   return (
     <MotionProvider>
+      <StructuredData />
       <Navbar />
       {/* الخيط الذهبي يُرسم داخل كل قسم فوق خلفيته — لا كطبقة عامة تُطمس */}
       <main id="main" className="relative">
