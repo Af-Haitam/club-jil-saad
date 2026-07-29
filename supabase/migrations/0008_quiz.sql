@@ -306,13 +306,15 @@ as $$
     join public.profiles p on p.id = a.member_id and p.status = 'active'
     group by a.member_id
   ), ranked as (
+    -- `place` لا `position`: الثانية كلمةٌ لها معنًى نحويّ في postgres
+    -- (‏`position(x in y)`‎)، ولا داعي لاختبار حدود المُحلّل بلا فائدة.
     select member_id, points, answered, correct,
-           rank() over (order by points desc) as position
+           rank() over (order by points desc) as place
     from totals
   )
   select coalesce(
     (select jsonb_build_object('points', points, 'answered', answered,
-                               'correct', correct, 'position', position)
+                               'correct', correct, 'position', place)
      from ranked where member_id = auth.uid()),
     jsonb_build_object('points', 0, 'answered', 0, 'correct', 0, 'position', null)
   );
@@ -324,21 +326,34 @@ $$;
  * دالّةٌ مُعرِّفة لأنّ `profiles_select` لا تدع العضو يقرأ اسم غيره، وهذا
  * صحيحٌ ويجب أن يبقى: الاستثناء هنا اسمٌ ونقاط، لا أكثر.
  */
+-- تعيد jsonb لا `returns table`: كلمة `position` مسموحةٌ اسمًا لعمودٍ في
+-- جدول، لكنّها ممنوعةٌ اسمًا لمُعامل دالّة — و`returns table` يبني
+-- مُعاملات. ومفاتيح jsonb نصوصٌ لا معرّفات، فلا تصطدم بكلمةٍ محجوزة أصلًا.
+-- وهذا يوافق أخواتها الثلاث: كلّها تعيد jsonb.
 create or replace function public.get_leaderboard()
-returns table (position int, member_id uuid, full_name text, points int, is_me boolean)
+returns jsonb
 language sql stable security definer set search_path = public
 as $$
-  select rank() over (order by sum(a.points) desc)::int,
-         p.id,
-         p.full_name,
-         sum(a.points)::int,
-         p.id = auth.uid()
-  from public.answers a
-  join public.profiles p on p.id = a.member_id and p.status = 'active'
-  where auth.uid() is not null
-  group by p.id, p.full_name
-  order by sum(a.points) desc, p.full_name
-  limit 10;
+  select coalesce(jsonb_agg(jsonb_build_object(
+           'position',  place,
+           'member_id', id,
+           'full_name', full_name,
+           'points',    points,
+           'is_me',     is_me
+         ) order by place), '[]'::jsonb)
+  from (
+    select p.id,
+           p.full_name,
+           sum(a.points)::int                             as points,
+           rank() over (order by sum(a.points) desc)::int as place,
+           p.id = auth.uid()                              as is_me
+    from public.answers a
+    join public.profiles p on p.id = a.member_id and p.status = 'active'
+    where auth.uid() is not null
+    group by p.id, p.full_name
+    order by sum(a.points) desc, p.full_name
+    limit 10
+  ) top;
 $$;
 
 -- الافتراضي في postgres هو منح التنفيذ لـPUBLIC، و«السحب من anon» وحده لا
