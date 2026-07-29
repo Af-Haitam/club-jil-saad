@@ -6,6 +6,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { runDailyJob } from "@/lib/notify/daily";
+import { logError } from "@/lib/ops/log";
 
 // لا تُخزَّن ولا تُبنى مسبقًا: نتيجتها تختلف كل يوم وتكتب في قاعدة البيانات.
 export const dynamic = "force-dynamic";
@@ -24,8 +25,11 @@ export async function GET(request: NextRequest) {
     const report = await runDailyJob();
     return NextResponse.json({ ok: true, ...report });
   } catch (error) {
-    // الخطأ يظهر في سجلّ Vercel، ورمز 500 يجعل المحاولة تُعاد — وهو آمن
-    // لأن كل كتابة في المهمّة لا تُكرَّر.
+    // يُكتب في `error_log` أيضًا لا في سجلّ Vercel وحده: ذاك يُمسح بعد
+    // أيّام في الخطّة المجّانية، ولا يفتحه أحد. وهذا الجدول أمام المدير في
+    // لوحته — وهي المرّة الأولى التي يُعلَم فيها بفشل المهمّة دون مصادفة.
+    await logError("cron", "daily job failed", error);
+    // ورمز 500 يجعل المحاولة تُعاد — وهو آمن لأن كل كتابة في المهمّة لا تُكرَّر.
     return NextResponse.json(
       { ok: false, error: error instanceof Error ? error.message : String(error) },
       { status: 500 },
