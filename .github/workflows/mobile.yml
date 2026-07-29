@@ -151,8 +151,11 @@ jobs:
             NAME="club-jil-saad.apk"
           fi
 
+          # اسم أثر البناء يوافق اسم النشر في نسخة التجربة ويخالفه في
+          # الأساسية، و`cp` على ملفٍّ إلى نفسه خطأٌ يوقف المهمّة.
+          SRC="$RUNNER_TEMP/club-jil-saad-$VARIANT.apk"
           APK="$RUNNER_TEMP/$NAME"
-          cp "$RUNNER_TEMP/club-jil-saad-$VARIANT.apk" "$APK"
+          [ "$SRC" = "$APK" ] || cp "$SRC" "$APK"
 
           SUM=$(sha256sum "$APK" | cut -d' ' -f1)
           SIZE=$(du -m "$APK" | cut -f1)
