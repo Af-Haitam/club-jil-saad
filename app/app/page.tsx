@@ -5,8 +5,6 @@
 // ولذلك تُرسم الشاشتان هنا **بلون الهاتف لا بلون النادي** — رقٌّ فاتح فوق
 // الحبر — كي تُقرأ فورًا على أنّها كلام الهاتف، لا كلامنا.
 import type { Metadata } from "next";
-import { statSync } from "node:fs";
-import { join } from "node:path";
 import Image from "next/image";
 import Link from "next/link";
 import GeoPattern from "@/components/GeoPattern";
@@ -20,22 +18,45 @@ export const metadata: Metadata = {
 // لا شيء في الصفحة يتغيّر بين زائرٍ وآخر، وحجم الملفّ يُقرأ وقت البناء.
 export const dynamic = "force-static";
 
-const APK_PATH = "/download/club-jil-saad.apk";
+/**
+ * الحزمة تُخدَم من إصدارات GitHub لا من `public/`.
+ *
+ * السبب واقعة: Vercel اعترضت تنزيل الحزمة بصفحة تحقّقٍ حين تتابعت
+ * التنزيلات الكبيرة، فحُفظت صفحة HTML باسم `.apk` وقال الهاتف «مشكلة في
+ * تحليل الحزمة». وأصول الإصدارات لا تمرّ بذلك الاعتراض، ولا حدَّ لعرضها،
+ * ولا تُضيف ٥٧ م.ب إلى تاريخ git في كلّ بناء.
+ *
+ * والوسم ثابت (`app-latest`) لا مرقَّم، فالرابط لا يتغيّر مع كلّ إصدار.
+ */
+const REPO = "Af-Haitam/club-jil-saad";
+const APK_TAG = "app-latest";
+const APK_FILE = "club-jil-saad.apk";
+const APK_URL = `https://github.com/${REPO}/releases/download/${APK_TAG}/${APK_FILE}`;
 
-/** حجم الملفّ بالميغابايت، أو null إن لم يُبنَ بعد. */
-function apkSizeMb(): string | null {
+/**
+ * حجم الحزمة بالميغابايت وقت البناء، أو null إن تعذّر.
+ *
+ * وتعذّرُه لا يخفي الزرّ: الرابط ثابتٌ يعمل سواء عرفنا الحجم أم لا،
+ * وإخفاء التنزيل لأنّ رقمًا تجميليًّا لم يصل خطأٌ في الأولويات.
+ */
+async function apkSizeMb(): Promise<string | null> {
   try {
-    const { size } = statSync(join(process.cwd(), "public", APK_PATH));
-    return (size / 1024 / 1024).toFixed(1);
+    const res = await fetch(
+      `https://api.github.com/repos/${REPO}/releases/tags/${APK_TAG}`,
+      { headers: { accept: "application/vnd.github+json" } },
+    );
+    if (!res.ok) return null;
+    const rel: { assets?: { name: string; size: number }[] } = await res.json();
+    const asset = rel.assets?.find((x) => x.name === APK_FILE);
+    return asset ? (asset.size / 1024 / 1024).toFixed(1) : null;
   } catch {
-    // الصفحة تسبق أوّل بناء للتطبيق عمدًا — فتعرض «قيد التجهيز» بدل زرٍّ مكسور.
     return null;
   }
 }
 
-export default function AppPage() {
+export default async function AppPage() {
   const a = strings.app;
-  const sizeMb = apkSizeMb();
+  const sizeMb = await apkSizeMb();
 
   return (
     <div className="relative min-h-svh overflow-hidden bg-ink px-5 py-14 text-parchment">
@@ -78,24 +99,17 @@ export default function AppPage() {
         <section className="mt-6 w-full rounded-2xl border border-gold/25 bg-ink-soft/60 p-6 backdrop-blur-sm sm:p-8">
           <h2 className="font-display text-xl text-gold">{a.androidHeading}</h2>
 
+          <a
+            href={APK_URL}
+            className="mt-5 block rounded-sm bg-gold px-6 py-4 text-center text-lg font-bold text-ink transition-opacity hover:opacity-90"
+          >
+            {a.download}
+          </a>
           {sizeMb ? (
-            <>
-              <a
-                href={APK_PATH}
-                download
-                className="mt-5 block rounded-sm bg-gold px-6 py-4 text-center text-lg font-bold text-ink transition-opacity hover:opacity-90"
-              >
-                {a.download}
-              </a>
-              <p className="mt-2 text-center text-xs tracking-widest text-parchment/50">
-                {a.downloadMeta.replace("{size}", sizeMb)}
-              </p>
-            </>
-          ) : (
-            <p className="mt-5 rounded-sm border border-dashed border-gold/30 px-6 py-4 text-center text-sm text-parchment/60">
-              {a.soon}
+            <p className="mt-2 text-center text-xs tracking-widest text-parchment/50">
+              {a.downloadMeta.replace("{size}", sizeMb)}
             </p>
-          )}
+          ) : null}
 
           <ol className="mt-8 space-y-6">
             {[

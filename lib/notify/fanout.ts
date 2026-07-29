@@ -5,7 +5,7 @@
 // وهي تتحقّق من الدور والجمهور داخل قاعدة البيانات نفسها.
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-export type FanoutKind = "announcement" | "reminder";
+export type FanoutKind = "announcement" | "reminder" | "question";
 
 export interface FanoutResult {
   recipients: string[];

@@ -20,6 +20,7 @@ import { sheetConfig } from "@/lib/manage/google-sheet";
 import { getAllSections, sectionsAreSeeded } from "@/lib/site/queries";
 import ExamForm from "@/components/manage/ExamForm";
 import ContentForm from "@/components/manage/ContentForm";
+import QuestionForm from "@/components/manage/QuestionForm";
 import { strings } from "@/lib/strings";
 import type { UserRole, Profile, HifzProgress, Halaqa } from "@/lib/types/database";
 
@@ -34,7 +35,8 @@ const sectionNav = [
   { id: "halaqat", n: "03", label: m.navHalaqat },
   { id: "exams", n: "04", label: m.navExams },
   { id: "content", n: "05", label: m.navContent },
-  { id: "site", n: "06", label: m.navSite },
+  { id: "questions", n: "06", label: m.navQuestions },
+  { id: "site", n: "07", label: m.navSite },
 ];
 
 const roleLabel: Record<UserRole, string> = { admin: m.roleAdmin, supervisor: m.roleSupervisor, member: m.roleMember };
@@ -270,9 +272,20 @@ export default async function ManagePage() {
         />
       </ManageSection>
 
-      {/* ── 06 · محرّر الصفحة الرئيسية (للمدير وحده) ── */}
+      {/* ── 06 · الأسئلة ── */}
+      <ManageSection id="questions" n="06" title={m.navQuestions} desc={m.questionsTitle}>
+        <QuestionForm
+          isAdmin={isAdmin}
+          halaqat={halaqaOpts}
+          members={active
+            .filter((p) => p.id !== me.id)
+            .map((p) => ({ id: p.id, full_name: p.full_name }))}
+        />
+      </ManageSection>
+
+      {/* ── 07 · محرّر الصفحة الرئيسية (للمدير وحده) ── */}
       {isAdmin && (
-        <ManageSection id="site" n="06" title={m.navSite} desc={m.siteSubtitle}>
+        <ManageSection id="site" n="07" title={m.navSite} desc={m.siteSubtitle}>
           <SiteEditor sections={siteSections} seeded={seeded} />
         </ManageSection>
       )}

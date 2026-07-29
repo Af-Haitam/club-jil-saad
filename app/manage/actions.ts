@@ -17,6 +17,7 @@ import {
   examSchema,
   contentSchema,
   memberSchema,
+  questionSchema,
 } from "@/lib/validation/manage";
 import { zodFieldErrors, type ActionState } from "@/lib/validation/auth";
 import { strings } from "@/lib/strings";
@@ -568,5 +569,91 @@ export async function publishContent(_prev: ActionState, formData: FormData): Pr
     notice: `${
       kind === "reminder" ? strings.manage.reminderPublished : strings.manage.adPublished
     } — ${recipientsLabel(recipients.length)} · ${devicesLabel(push.sent)}`,
+  };
+}
+
+// ── طرح سؤال ────────────────────────────────────────────────────────────
+// الترتيب هنا مقصود: السؤال يُكتب **مسوّدةً** أوّلًا، ثمّ تُكتب اختياراته،
+// ثمّ يُفتح. ولو كُتب مفتوحًا من أوّل سطرٍ لأمكن أن يقرأه عضوٌ في اللحظة
+// التي بين الإدراجين فيراه بلا اختيارات — أو ببعضها.
+export async function publishQuestion(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const parsed = questionSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { ok: false, fieldErrors: zodFieldErrors(parsed.error) };
+  const v = parsed.data;
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: strings.auth.errGeneric };
+
+  const { data: row, error } = await supabase
+    .from("questions")
+    .insert({
+      title: v.title,
+      body: v.body,
+      explanation: v.explanation,
+      points: v.points,
+      audience_type: v.audience_type,
+      halaqa_id: v.audience_type === "halaqa" ? v.halaqa_id : null,
+      member_id: v.audience_type === "member" ? v.member_id : null,
+      closes_at: v.closes_at ? new Date(v.closes_at).toISOString() : null,
+      author_id: user.id,
+      status: "draft",
+    })
+    .select("id")
+    .single();
+
+  if (error || !row) {
+    const denied = error?.code === "42501";
+    return { ok: false, error: denied ? strings.manage.errAudienceScope : strings.auth.errGeneric };
+  }
+
+  const texts = [v.option_1, v.option_2, v.option_3, v.option_4, v.option_5, v.option_6];
+  const options = texts
+    .map((body, i) => ({ body: body?.trim() ?? "", position: i + 1, correct: i + 1 === v.correct }))
+    .filter((o) => o.body.length > 0);
+
+  const { error: optError } = await supabase.from("question_options").insert(
+    options.map((o) => ({
+      question_id: row.id,
+      body: o.body,
+      position: o.position,
+      is_correct: o.correct,
+    })),
+  );
+
+  // سؤالٌ بلا اختيارات لا يُترك مسوّدةً معلّقة — يُحذف، والحذف يصحّ لأنّه
+  // ما زال مسوّدةً لم يرها أحد.
+  if (optError) {
+    await supabase.from("questions").delete().eq("id", row.id);
+    return { ok: false, error: strings.auth.errGeneric };
+  }
+
+  const { error: openError } = await supabase
+    .from("questions")
+    .update({ status: "open", published_at: new Date().toISOString() })
+    .eq("id", row.id);
+  if (openError) return { ok: false, error: strings.auth.errGeneric };
+
+  const { recipients, error: fanoutError } = await fanout(supabase, "question", row.id);
+  if (fanoutError) return { ok: false, error: strings.manage.errAudienceScope };
+
+  const push = await pushToUsers(recipients, {
+    title: strings.manage.questionPushTitle,
+    body: v.title,
+    url: "/dashboard",
+  });
+
+  revalidatePath("/dashboard", "layout");
+  revalidatePath("/manage");
+  return {
+    ok: true,
+    notice: `${strings.manage.questionPublished} — ${recipientsLabel(
+      recipients.length,
+    )} · ${devicesLabel(push.sent)}`,
   };
 }

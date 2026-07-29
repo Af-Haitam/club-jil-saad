@@ -21,8 +21,10 @@ on:
         options: ["release", "beta"]
         default: "beta"
 
+# الكتابة لازمة لرفع الحزمة إلى الإصدارات — والرفع من المُشغِّل نفسه
+# لا من جهاز أحد: الملفّ ٥٧ م.ب، ومنبعه هنا أصلًا.
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -122,3 +124,52 @@ jobs:
           name: apk
           path: ${{ runner.temp }}/club-jil-saad-${{ inputs.variant }}.apk
           if-no-files-found: error
+
+      # ── النشر ───────────────────────────────────────────────────────────
+      # وسمٌ ثابت لكلّ نسخة (‎app-latest‎ و‎app-beta‎) لا وسمٌ لكلّ إصدار،
+      # فرابط التنزيل لا يتغيّر أبدًا وصفحة ‎/app‎ لا تُعدَّل مع كلّ بناء.
+      #
+      # ولماذا الإصدارات لا ‎public/download‎؟ لأنّ Vercel اعترض تنزيل الحزمة
+      # فعلًا بصفحة تحقّقٍ حين تتابعت التنزيلات الكبيرة — وصفحة HTML تُحفَظ
+      # باسم ‎.apk‎ فيقول الهاتف «مشكلة في تحليل الحزمة». وأصولُ الإصدارات
+      # بلا حدٍّ ولا اعتراض، ولا تُثقل مستودع git بـ٥٧ م.ب في كلّ بناء.
+      - name: النشر إلى الإصدارات
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VARIANT: ${{ inputs.variant }}
+          VERSION: ${{ inputs.versionName }}
+        run: |
+          set -euo pipefail
+          APK="$RUNNER_TEMP/club-jil-saad-$VARIANT.apk"
+
+          if [ "$VARIANT" = "beta" ]; then
+            TAG="app-beta"; TITLE="نسخة التجربة $VERSION"; FLAGS="--prerelease"
+          else
+            TAG="app-latest"; TITLE="تطبيق الأعضاء $VERSION"; FLAGS=""
+          fi
+
+          SUM=$(sha256sum "$APK" | cut -d' ' -f1)
+          SIZE=$(du -m "$APK" | cut -f1)
+
+          # البصمة في المتن ليست زينة: بها يُتحقَّق أنّ ما نزل هو ما بُني،
+          # وقد نزلت مرّةً حزمةٌ مبتورة فضاع يومان في البحث عن سببٍ وهمي.
+          cat > "$RUNNER_TEMP/notes.md" <<EOF
+          **الإصدار $VERSION** — بُني في $(date -u '+%Y-%m-%d %H:%M') UTC من \`${GITHUB_SHA:0:7}\`.
+
+          | | |
+          |---|---|
+          | الحجم | $SIZE م.ب |
+          | sha256 | \`$SUM\` |
+
+          طريقة التثبيت مشروحة بالعربية في <https://club-jil-saad.vercel.app/app>.
+          EOF
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release edit "$TAG" --title "$TITLE" --notes-file "$RUNNER_TEMP/notes.md"
+          else
+            gh release create "$TAG" --title "$TITLE" \
+              --notes-file "$RUNNER_TEMP/notes.md" $FLAGS
+          fi
+
+          gh release upload "$TAG" "$APK" --clobber
+          echo "نُشر: https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/$(basename "$APK")"

@@ -110,3 +110,49 @@ export const contentSchema = z
       ctx.addIssue({ code: "custom", path: ["member_id"], message: "اختر العضو" });
     }
   });
+
+// ─── طرح سؤال ──────────────────────────────────────────────────────────
+// الاختيارات تصل حقولًا مسطّحة (‎option_1‎ … ‎option_6‎) لأنّ FormData لا
+// تحمل مصفوفات، والصواب رقمٌ واحد لا مربّعات اختيار: سؤالٌ بجوابين
+// صحيحين لا يمكن تصحيحه بنقطةٍ واحدة.
+export const questionSchema = z
+  .object({
+    title: z.string().trim().min(1, "أدخل نصّ السؤال"),
+    body: optText,
+    explanation: optText,
+    points: reqNum("حدّد النقاط", 1, 10),
+    correct: reqNum("حدّد الإجابة الصحيحة", 1, 6),
+    closes_at: optText,
+    audience_type: z.enum(["both", "hifz", "club", "halaqa", "member"], "اختر الجمهور"),
+    halaqa_id: optText,
+    member_id: optText,
+    option_1: optText,
+    option_2: optText,
+    option_3: optText,
+    option_4: optText,
+    option_5: optText,
+    option_6: optText,
+  })
+  .superRefine((v, ctx) => {
+    if (v.audience_type === "halaqa" && !v.halaqa_id) {
+      ctx.addIssue({ code: "custom", path: ["halaqa_id"], message: "اختر الحلقة" });
+    }
+    if (v.audience_type === "member" && !v.member_id) {
+      ctx.addIssue({ code: "custom", path: ["member_id"], message: "اختر العضو" });
+    }
+
+    const opts = [v.option_1, v.option_2, v.option_3, v.option_4, v.option_5, v.option_6];
+    const filled = opts.filter((x) => x && x.trim().length > 0).length;
+    if (filled < 2) {
+      ctx.addIssue({ code: "custom", path: ["option_2"], message: "اكتب اختيارين على الأقلّ" });
+    }
+    // الصواب يشير إلى خانةٍ فارغة — يقع حين يُمسح اختيارٌ بعد اختياره صوابًا
+    if (!opts[v.correct - 1]?.trim()) {
+      ctx.addIssue({ code: "custom", path: ["correct"], message: "الإجابة الصحيحة تشير إلى خانة فارغة" });
+    }
+    // فجوةٌ بين الاختيارات تُربك ترقيم «أ ب ج»
+    const firstEmpty = opts.findIndex((x) => !x?.trim());
+    if (firstEmpty !== -1 && opts.slice(firstEmpty).some((x) => x?.trim())) {
+      ctx.addIssue({ code: "custom", path: ["option_2"], message: "لا تترك خانة فارغة بين الاختيارات" });
+    }
+  });

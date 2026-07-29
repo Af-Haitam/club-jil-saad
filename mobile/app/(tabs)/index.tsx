@@ -5,29 +5,47 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useSession } from "../../lib/session";
 import { getOverview, type Overview } from "../../lib/queries";
+import { getBoard, getQuestions, getScore, type BoardRow, type Question, type Score } from "../../lib/quiz";
 import { s } from "../../lib/strings";
 import { f, alpha } from "../../lib/theme";
 import { useTheme } from "../../lib/useTheme";
 import Loading from "../../components/Loading";
 import Card from "../../components/Card";
 import WeeklyGrid from "../../components/WeeklyGrid";
+import QuestionCard from "../../components/QuestionCard";
+import ScoreCard from "../../components/ScoreCard";
 
 export default function OverviewScreen() {
   const { t } = useTheme();
   const { session, profile } = useSession();
   const [data, setData] = useState<Overview | null>(null);
+  const [quiz, setQuiz] = useState<{ questions: Question[]; score: Score; board: BoardRow[] } | null>(
+    null,
+  );
   const [refreshing, setRefreshing] = useState(false);
   const [failed, setFailed] = useState(false);
 
+  // المسابقة تُحمَّل مستقلّةً عن المتابعة: هجرة 0008 قد لا تكون مطبَّقة
+  // بعد على قاعدةٍ ما، فلا يجوز أن يُسقط غيابُها شبكةَ الأسابيع معه.
+  const loadQuiz = useCallback(async () => {
+    try {
+      const [questions, score, board] = await Promise.all([getQuestions(), getScore(), getBoard()]);
+      setQuiz({ questions, score, board });
+    } catch {
+      setQuiz(null);
+    }
+  }, []);
+
   const load = useCallback(async () => {
     if (!session) return;
+    void loadQuiz();
     try {
       setData(await getOverview(session.user.id));
       setFailed(false);
     } catch {
       setFailed(true);
     }
-  }, [session]);
+  }, [session, loadQuiz]);
 
   useEffect(() => {
     void load();
@@ -42,6 +60,10 @@ export default function OverviewScreen() {
   if (!data && !failed) return <Loading />;
 
   const firstName = (profile?.full_name ?? "").trim().split(/\s+/)[0];
+
+  // الأحدث ممّا لم ينقضِ وقته — واحدٌ فقط. عرض عدّة أسئلةٍ معًا يحوّل
+  // الشاشة إلى استمارة، والصفحة صفحة متابعةٍ قبل كلّ شيء.
+  const openQuestion = quiz?.questions.find((q) => !q.expired) ?? null;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: t.bg }} edges={["top"]}>
@@ -65,6 +87,12 @@ export default function OverviewScreen() {
           </Card>
         ) : null}
 
+        {/* السؤال أوّلًا: له وقتٌ ينقضي، وما سواه في الصفحة باقٍ.
+            ويبقى معروضًا بعد الإجابة ليُقرأ الشرح، فلا يختفي بمجرّد الضغط. */}
+        {openQuestion ? (
+          <QuestionCard question={openQuestion} onAnswered={loadQuiz} />
+        ) : null}
+
         {data ? (
           <>
             <Position data={data} />
@@ -72,6 +100,9 @@ export default function OverviewScreen() {
             <ExamCard data={data} />
           </>
         ) : null}
+
+        {/* النقاط في الذيل: نظرةٌ إلى الوراء، لا شيء يُفعل بها الآن */}
+        {quiz ? <ScoreCard score={quiz.score} board={quiz.board} /> : null}
       </ScrollView>
     </SafeAreaView>
   );
