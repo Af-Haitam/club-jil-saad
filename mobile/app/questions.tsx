@@ -20,6 +20,7 @@ export default function QuestionsArchive() {
   const { t } = useTheme();
   const [items, setItems] = useState<Question[] | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [failed, setFailed] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -27,8 +28,13 @@ export default function QuestionsArchive() {
       // ما أُجيب عنه أو انقضى وقته — أمّا المفتوح الذي لم يُجب عنه فمكانه
       // شاشة المتابعة، ولا يُعرض هنا لئلّا يُجاب عنه من مكانين.
       setItems(all.filter((q) => q.answer !== null || q.expired));
+      setFailed(false);
     } catch {
+      // كان `setItems([])` وحده، فيقرأ العضو «لم يمرّ سؤالٌ بعد» على شاشةٍ
+      // فشل جلبها — وهي نفس الكذبة التي أفرغت جدول الحفظ: لا يُفرَّق
+      // «فارغ» من «لم يُقرأ».
       setItems([]);
+      setFailed(true);
     }
   }, []);
 
@@ -83,12 +89,12 @@ export default function QuestionsArchive() {
                 fontFamily: f.body,
                 fontSize: 14,
                 lineHeight: 28,
-                color: t.textFaint,
+                color: failed ? t.absent : t.textFaint,
                 textAlign: "center",
                 marginTop: 40,
               }}
             >
-              {s.quiz.archiveEmpty}
+              {failed ? s.common.error : s.quiz.archiveEmpty}
             </Text>
           )
         }

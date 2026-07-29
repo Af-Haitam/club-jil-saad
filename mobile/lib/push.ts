@@ -120,13 +120,17 @@ function routeFor(data: unknown): string {
 export function useNotificationRouting(): void {
   useEffect(() => {
     let handled = false;
+    // المؤقّت يُنظَّف كما تُنظَّف المشتركة. أثرُه هنا ضئيلٌ عمليًّا — الخطّاف
+    // مركَّبٌ في التخطيط الجذريّ فيعيش عمر التطبيق — لكنّ تركه ديْنٌ يُستحقّ
+    // في أوّل يومٍ يُنقل فيه إلى مكوّنٍ أقصر عمرًا.
+    let pending: ReturnType<typeof setTimeout> | undefined;
 
     void (async () => {
       const initial = await Notifications.getLastNotificationResponseAsync();
       if (initial && !handled) {
         handled = true;
         // نؤجّل قليلًا حتى يُركَّب المُوجّه، وإلّا ضاع الانتقال.
-        setTimeout(() => {
+        pending = setTimeout(() => {
           router.push(routeFor(initial.notification.request.content.data));
         }, 300);
       }
@@ -137,7 +141,10 @@ export function useNotificationRouting(): void {
       router.push(routeFor(response.notification.request.content.data));
     });
 
-    return () => sub.remove();
+    return () => {
+      if (pending) clearTimeout(pending);
+      sub.remove();
+    };
   }, []);
 }
 
