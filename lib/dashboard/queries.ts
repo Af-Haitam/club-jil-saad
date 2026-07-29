@@ -82,6 +82,17 @@ export async function getDashboardData(): Promise<DashboardData | null> {
       .limit(10),
   ]);
 
+  // استعلامٌ مرفوض يعيد data = null، و`?? []` يحوّله إلى شبكةٍ فارغة
+  // **تُشبه تمامًا** «لم تُسجَّل حصص بعد». وقع هذا في التطبيق فعلًا: ثلاثة
+  // أسماء أعمدةٍ خاطئة أفرغت جدول العضو ولم يشتكِ شيء، وضاع يومان في
+  // البحث عن سببٍ في الواجهة. فليصرخ هنا كما يصرخ هناك.
+  //
+  // ويُستثنى `reminders` وحده عمدًا: جدوله قد لا يكون موجودًا قبل تشغيل
+  // 0003، وغيابه حالةٌ متوقَّعة لا عطل.
+  for (const r of [sessionsRes, progressRes, examRes, annRes] as { error?: unknown }[]) {
+    if (r.error) throw new Error(JSON.stringify(r.error));
+  }
+
   return {
     profile,
     cycle,
