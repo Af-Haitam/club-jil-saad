@@ -14,6 +14,7 @@ export const strings = {
   contactPhone: "الهاتف",
   contactCity: "المدينة",
   contactSoon: "بيانات التواصل تُضاف قريبًا",
+  followTitle: "تابعنا",
   rights: "جميع الحقوق محفوظة",
   statsHeading: "أرقام النادي",
   tracking: {

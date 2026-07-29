@@ -217,6 +217,26 @@ export const footer = {
     line: "نادٍ طلابيٌّ دعويّ — قرآنٌ يُحفَظ، وخُلُقٌ يُغرَس، وصحبةٌ تُعين.",
     // TODO(asset): بيانات التواصل الحقيقية
     contact: { email: "—", phone: "—", city: "—" },
+    // حسابات النادي. قناتا واتساب لا واحدة، وهما مقصودتان: قناةٌ للنادي
+    // وأخرى للحفظ، فلكلٍّ اسمها ولا تُدمجان في رابطٍ واحد.
+    social: [
+      {
+        key: "facebook",
+        label: "فيسبوك",
+        url: "https://www.facebook.com/p/%D9%86%D8%A7%D8%AF%D9%8A-%D8%A7%D9%84%D8%AC%D9%8A%D9%84-%D8%A7%D9%84%D8%B5%D8%A7%D8%B9%D8%AF-100067580777384/",
+      },
+      { key: "instagram", label: "إنستغرام", url: "https://www.instagram.com/club_jill_saed/" },
+      {
+        key: "whatsapp",
+        label: "قناة واتساب",
+        url: "https://whatsapp.com/channel/0029VaDyKBq5kg7FAAwDNk25",
+      },
+      {
+        key: "whatsapp",
+        label: "قناة واتساب ٢",
+        url: "https://whatsapp.com/channel/0029Vb6H9QHBlHpfuhOYjA0H",
+      },
+    ] as { key: "facebook" | "instagram" | "whatsapp"; label: string; url: string }[],
     hijriYear: "١٤٤٨هـ",
     gregYear: "٢٠٢٦م",
   },

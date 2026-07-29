@@ -153,8 +153,16 @@ function payload(token: string, message: FcmMessage, validateOnly: boolean) {
         notification: {
           channel_id: "default",
           color: "#C9A227",
-          // بالضغط يُفتح التطبيق على الوجهة، لا على شاشته الأولى.
-          click_action: "android.intent.action.MAIN",
+          // **لا `click_action` هنا.**
+          //
+          // كان `android.intent.action.MAIN`، وهو ما جعل الضغط لا يفعل شيئًا:
+          // FCM يبني بالقيمة نيّةً فئتُها DEFAULT، وMainActivity في التطبيق
+          // مُعلَنةٌ بفئة LAUNCHER لا DEFAULT — فلا تُطابَق النيّة أيَّ نشاط،
+          // ويُطبَق التنبيه على لا شيء.
+          //
+          // وبحذفه يعود سلوك FCM الافتراضيّ: فتحُ نشاط الإقلاع. وعندها يلتقط
+          // `useNotificationRouting` الرسالة ويوجّه إلى الشاشة المقصودة عبر
+          // حقل `data.url` أدناه.
         },
       },
       // القيم نصوصٌ إجباريًّا في FCM — رقمٌ هنا يُرفض بالكامل.
