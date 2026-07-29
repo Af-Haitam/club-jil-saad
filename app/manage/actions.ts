@@ -661,10 +661,17 @@ export async function publishQuestion(
 
   revalidatePath("/dashboard", "layout");
   revalidatePath("/manage");
+
+  // «وصل إلى ٣ أعضاء · دُفع إلى ٠ أجهزة» جملةٌ صحيحةٌ لا تُفهم: يقرؤها
+  // الناشر فيظنّ التنبيهات معطّلة، وهي تعمل — لكنّ لا أحد من المستهدَفين
+  // سجّل جهازًا. والناشر نفسه لا يُشعَر برسالته عمدًا، فإن كان جهازه هو
+  // الوحيد المسجَّل في النادي لم يهتزّ شيء أبدًا. فليُقل ذلك صراحةً.
+  const blind = push.sent === 0 && recipients.length > 0;
   return {
     ok: true,
-    notice: `${strings.manage.questionPublished} — ${recipientsLabel(
-      recipients.length,
-    )} · ${devicesLabel(push.sent)}`,
+    notice:
+      `${strings.manage.questionPublished} — ${recipientsLabel(recipients.length)} · ` +
+      `${devicesLabel(push.sent)}` +
+      (blind ? ` — ${strings.manage.noDevicesHint}` : ""),
   };
 }

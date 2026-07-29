@@ -72,7 +72,10 @@ export async function getQuiz(): Promise<QuizData | null> {
 
   const questions = (qRes.data ?? []) as QuizQuestion[];
   return {
-    open: questions.find((q) => !q.expired) ?? null,
+    // ما لم يُجب عنه ولم ينقضِ وقته — والشرط `answer === null` هو ما يجعل
+    // الجهازين متّفقين: الإجابة صفٌّ في القاعدة لا حالةٌ في متصفّح، فمن
+    // أجاب على هاتفه لم يعد يرى السؤال على حاسوبه، والعكس.
+    open: questions.find((q) => !q.expired && q.answer === null) ?? null,
     score: sRes.data as QuizScore,
     board: (bRes.data ?? []) as BoardRow[],
   };

@@ -26,6 +26,7 @@ const ABJAD = ["أ", "ب", "ج", "د", "هـ", "و"];
 
 /** ما يمكث به الكشف قبل أن ينسحب. خمسٌ تكفي لقراءة سطرٍ أو سطرين. */
 const LINGER_MS = 5000;
+const FADE_MS = 420;
 
 export default function QuestionCard({
   question,
@@ -57,16 +58,33 @@ export default function QuestionCard({
     }
   }, [answered, reveal]);
 
+  // الانسحاب لا يُعلَّق على انتهاء الحركة.
+  //
+  // كان النداء داخل `start(({finished}) => …)`، وإعادةُ رسمٍ واحدة أثناء
+  // التلاشي تُلغي الحركة فيصل `finished = false` فلا يُنادى شيء — فتبقى
+  // البطاقة مركَّبةً بشفافيةٍ صفر: **تحجز مكانها كاملًا وهي غير مرئية**،
+  // وتلك كانت الفجوة البيضاء فوق «موضعك في الحفظ».
+  //
+  // فالآن مؤقّتان مستقلّان: واحدٌ يبدأ التلاشي، وآخر يزيل البطاقة بعده
+  // مهما جرى للحركة.
+  const dismissed = useRef(false);
   useEffect(() => {
     if (!answered || !autoDismiss || !onDismiss) return;
-    const timer = setTimeout(() => {
-      Animated.timing(fade, { toValue: 0, duration: 420, useNativeDriver: true }).start(
-        ({ finished }) => {
-          if (finished) onDismiss();
-        },
-      );
+
+    const startFade = setTimeout(() => {
+      Animated.timing(fade, { toValue: 0, duration: FADE_MS, useNativeDriver: true }).start();
     }, LINGER_MS);
-    return () => clearTimeout(timer);
+
+    const remove = setTimeout(() => {
+      if (dismissed.current) return;
+      dismissed.current = true;
+      onDismiss();
+    }, LINGER_MS + FADE_MS);
+
+    return () => {
+      clearTimeout(startFade);
+      clearTimeout(remove);
+    };
   }, [answered, autoDismiss, onDismiss, fade]);
 
   const toggle = (id: string) => {

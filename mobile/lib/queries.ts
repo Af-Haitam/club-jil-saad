@@ -249,11 +249,23 @@ export async function markAllRead(userId: string): Promise<void> {
     .is("read_at", null);
 }
 
-/** إشعارٌ واحد. سياسة `notif_update` تقصره على صفوف صاحبه أصلًا. */
-export async function markRead(notificationId: string): Promise<void> {
-  await supabase
+/**
+ * إشعارٌ واحد. سياسة `notif_update` تقصره على صفوف صاحبه أصلًا.
+ *
+ * يعيد `true` إن كُتب صفٌّ فعلًا.
+ *
+ * و`.select()` هنا ليست ترفًا: بدونها ترجع الكتابة بلا خطأٍ ولو لم تمسّ
+ * صفًّا واحدًا — سياسةٌ ترفض، أو جلسةٌ انتهت، أو معرّفٌ لا وجود له. فتُخفي
+ * الواجهة الوسم تفاؤلًا، ويعود «جديد» عند أوّل إعادة فتح، ولا شيء يقول
+ * لماذا. فليُعلَم إن كُتب أم لم يُكتب.
+ */
+export async function markRead(notificationId: string): Promise<boolean> {
+  const { data, error } = await supabase
     .from("notifications")
     .update({ read_at: new Date().toISOString() })
     .eq("id", notificationId)
-    .is("read_at", null);
+    .select("id");
+
+  if (error) throw new Error(error.message);
+  return (data ?? []).length > 0;
 }

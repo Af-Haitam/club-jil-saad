@@ -41,15 +41,28 @@ export default function InboxScreen() {
 
   const anyUnread = (items ?? []).some((n) => n.unread);
 
-  // تفاؤليًّا: الشارة تختفي تحت الإصبع، والكتابة تلحق. وإن فشلت الكتابة
-  // عاد الوسم عند أوّل تحديث — ولا شيء ضاع، فالقراءة ليست فعلًا خطيرًا.
+  // تفاؤليًّا: الشارة تختفي تحت الإصبع، والكتابة تلحق.
+  //
+  // فإن لم تُكتب، **يعود الوسم في مكانه فورًا** ويُقال السبب — لا أن
+  // يختفي هنا ويعود عند إعادة فتح التطبيق فيبدو التطبيق ناسيًا.
   const markOne = useCallback(async (item: FeedItem) => {
     if (!item.notification_id) return;
-    setItems((prev) =>
-      (prev ?? []).map((n) => (n.key === item.key ? { ...n, unread: false } : n)),
-    );
-    await markRead(item.notification_id);
-    refreshUnread();
+    const flip = (unread: boolean) =>
+      setItems((prev) => (prev ?? []).map((n) => (n.key === item.key ? { ...n, unread } : n)));
+
+    flip(false);
+    try {
+      const written = await markRead(item.notification_id);
+      if (!written) {
+        flip(true);
+        setFailed(true);
+        return;
+      }
+      refreshUnread();
+    } catch {
+      flip(true);
+      setFailed(true);
+    }
   }, []);
 
   return (
@@ -82,6 +95,21 @@ export default function InboxScreen() {
           </Pressable>
         ) : null}
       </View>
+
+      {/* لا يظهر إلّا حين تفشل كتابةٌ فعلًا — والصمت هنا هو ما كان يُربك */}
+      {failed && (items?.length ?? 0) > 0 ? (
+        <Text
+          style={{
+            fontFamily: f.body,
+            fontSize: 12,
+            color: t.absent,
+            paddingHorizontal: 20,
+            paddingBottom: 8,
+          }}
+        >
+          {s.common.error}
+        </Text>
+      ) : null}
 
       <FlatList
         data={items ?? []}

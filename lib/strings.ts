@@ -458,6 +458,8 @@ export const strings = {
     questionSubmitting: "جارٍ النشر…",
     questionPublished: "نُشر السؤال",
     questionPushTitle: "سؤال جديد",
+    noDevicesHint:
+      "لا جهاز مسجَّلًا لدى المستهدَفين. وأنت لا تُشعَر برسالتك، فلن يهتزّ هاتفك ولو كان مسجَّلًا — جرّبها بحسابٍ آخر يفتح التطبيق ويفعّل التنبيهات.",
     questionRecent: "الأسئلة المطروحة",
     questionNone: "لم يُطرح سؤالٌ بعد",
     questionAnswers: "أجاب",

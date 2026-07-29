@@ -4,8 +4,9 @@
 //
 // خطوتان لا واحدة: الضغطة الأولى تُعلّم، والثانية تُرسل. الإجابة لا رجعة
 // فيها، ولمسةٌ خاطئة تحرق المحاولة الوحيدة.
-import { useState, useTransition } from "react";
-import { answerQuestion } from "@/app/dashboard/actions";
+import { useEffect, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { answerQuestion, type AnswerResult } from "@/app/dashboard/actions";
 import type { QuizQuestion } from "@/lib/dashboard/quiz";
 import { strings } from "@/lib/strings";
 
@@ -15,15 +16,33 @@ const ABJAD = ["أ", "ب", "ج", "د", "هـ", "و"];
 const d = strings.dashboard;
 
 export default function QuestionCard({ question }: { question: QuizQuestion }) {
+  const router = useRouter();
   const [picked, setPicked] = useState<string[]>([]);
   const [failed, setFailed] = useState(false);
   const [pending, startTransition] = useTransition();
+  /** نتيجة الإجابة كما عادت من الخادم — تُعرض هنا خمس ثوانٍ ثمّ تُطوى. */
+  const [result, setResult] = useState<AnswerResult | null>(null);
+  const [gone, setGone] = useState(false);
 
-  const answered = question.answer !== null;
+  const answered = question.answer !== null || result !== null;
   const locked = answered || question.expired;
   const multi = question.multi_select;
-  const mine = question.answer?.option_ids ?? [];
-  const won = question.answer?.is_correct ?? false;
+  const mine = result ? picked : (question.answer?.option_ids ?? []);
+  const won = result ? !!result.is_correct : (question.answer?.is_correct ?? false);
+  const correctIds = result?.correct_ids ?? null;
+  const explanation = result ? result.explanation : question.explanation;
+
+  // خمس ثوانٍ للقراءة، ثمّ تُطوى البطاقة ويُطلب التجديد — والخادم عندئذٍ
+  // لا يعيد السؤال أصلًا لأنّه أُجيب عنه، فيتّفق ما على الشاشة وما في
+  // القاعدة بلا حالةٍ محفوظة في المتصفّح.
+  useEffect(() => {
+    if (!result) return;
+    const t = setTimeout(() => {
+      setGone(true);
+      router.refresh();
+    }, 5000);
+    return () => clearTimeout(t);
+  }, [result, router]);
 
   function toggle(id: string) {
     // سؤال الجواب الواحد يستبدل، وسؤال الأجوبة يضيف ويحذف
@@ -37,12 +56,19 @@ export default function QuestionCard({ question }: { question: QuizQuestion }) {
     setFailed(false);
     startTransition(async () => {
       const res = await answerQuestion(question.id, picked);
-      if (!res.ok) setFailed(true);
+      if (res.ok) setResult(res);
+      else setFailed(true);
     });
   }
 
+  if (gone) return null;
+
   return (
-    <section className="rounded-xl border border-gold/30 bg-ink-soft/50 p-6">
+    <section
+      className={`rounded-xl border border-gold/30 bg-ink-soft/50 p-6 transition-opacity duration-500 ${
+        result ? "opacity-100" : ""
+      }`}
+    >
       <h2 className="font-display text-sm tracking-wide text-gold">{d.quizTitle}</h2>
 
       <p className="mt-3 font-display text-lg leading-9 text-parchment">{question.title}</p>
@@ -57,7 +83,9 @@ export default function QuestionCard({ question }: { question: QuizQuestion }) {
       <ul className="mt-5 flex flex-col gap-2.5">
         {question.options.map((o, i) => {
           const isMine = mine.includes(o.id);
-          const isRight = o.is_correct === true;
+          // بعد الإجابة يأتي الصواب من ردّ الخادم لا من الصفّ المعروض:
+          // السؤال حين عُرض كان مفتوحًا، فحقل `is_correct` فيه فارغٌ عمدًا.
+          const isRight = correctIds ? correctIds.includes(o.id) : o.is_correct === true;
           const isPicked = picked.includes(o.id) && !locked;
 
           // بعد الإجابة: الصواب أخضر دائمًا وخطؤك أحمر — وإن أصبتَ فهما واحد
@@ -119,10 +147,12 @@ export default function QuestionCard({ question }: { question: QuizQuestion }) {
           >
             <span aria-hidden="true">{won ? "✓" : "✕"}</span>
             <span className="flex-1 text-sm font-bold">{won ? d.quizCorrect : d.quizWrong}</span>
-            {won && <span className="text-sm">+{question.answer?.points}</span>}
+            {won && (
+              <span className="text-sm">+{result?.points ?? question.answer?.points}</span>
+            )}
           </div>
-          {question.explanation && (
-            <p className="mt-3 text-sm leading-8 text-parchment/70">{question.explanation}</p>
+          {explanation && (
+            <p className="mt-3 text-sm leading-8 text-parchment/70">{explanation}</p>
           )}
         </div>
       )}
