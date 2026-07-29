@@ -18,6 +18,8 @@ import SheetSyncButton from "@/components/manage/SheetSyncButton";
 import SiteEditor from "@/components/manage/SiteEditor";
 import { sheetConfig } from "@/lib/manage/google-sheet";
 import { getAllSections, sectionsAreSeeded } from "@/lib/site/queries";
+import { recentErrors } from "@/lib/ops/log";
+import ErrorLog from "@/components/manage/ErrorLog";
 import ExamForm from "@/components/manage/ExamForm";
 import ContentForm from "@/components/manage/ContentForm";
 import QuestionForm from "@/components/manage/QuestionForm";
@@ -59,10 +61,11 @@ export default async function ManagePage() {
   // تابع للدورة، فلا يمكن ضمّه إلى الدفعة الأولى.
   const sessions = cycle ? await getCycleSessions(cycle.id) : [];
 
-  // محرّر الصفحة الرئيسية — للمدير وحده، فلا نُتعب القاعدة به مع كل مشرف.
-  const [siteSections, seeded] = isAdmin
-    ? await Promise.all([getAllSections(), sectionsAreSeeded()])
-    : [[], false];
+  // محرّر الصفحة الرئيسية وسجلّ الأعطال — للمدير وحده، فلا نُتعب القاعدة
+  // بهما مع كل مشرف.
+  const [siteSections, seeded, errors] = isAdmin
+    ? await Promise.all([getAllSections(), sectionsAreSeeded(), recentErrors()])
+    : [[], false, { ready: false, rows: [] }];
 
   const pending = members.filter((x) => x.status === "pending");
   const active = members.filter((x) => x.status === "active");
@@ -287,6 +290,14 @@ export default async function ManagePage() {
       {isAdmin && (
         <ManageSection id="site" n="07" title={m.navSite} desc={m.siteSubtitle}>
           <SiteEditor sections={siteSections} seeded={seeded} />
+        </ManageSection>
+      )}
+
+      {/* ── 08 · سجلّ الأعطال (للمدير وحده) ──
+          في الذيل عمدًا: يُقصد حين يُشتبه في عطل، ولا يُقرأ كلّ يوم. */}
+      {isAdmin && (
+        <ManageSection id="errors" n="08" title={m.errorsTitle} desc={m.errorsLead}>
+          <ErrorLog rows={errors.rows} ready={errors.ready} />
         </ManageSection>
       )}
     </div>

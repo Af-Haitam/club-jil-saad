@@ -39,6 +39,9 @@ export default async function ManageLayout({ children }: { children: ReactNode }
             <a href="/manage#questions" className="text-parchment/80 transition-colors hover:text-gold">
               {m.navQuestions}
             </a>
+            <Link href="/manage/guide" className="text-parchment/80 transition-colors hover:text-gold">
+              {m.navGuide}
+            </Link>
             <span className="text-ink-line" aria-hidden="true">
               |
             </span>

@@ -64,14 +64,23 @@ export type ErrorRow = {
   meta: Record<string, unknown> | null;
 };
 
-/** آخر ما وقع — تقرؤه لوحة الإدارة. */
-export async function recentErrors(limit = 20): Promise<ErrorRow[]> {
+/**
+ * آخر ما وقع — تقرؤه لوحة الإدارة.
+ *
+ * و`ready` تفصل حالتين تبدوان واحدة: «لا أعطال» و«الجدول غير موجود بعد».
+ * لولاها لعرضت اللوحة «لا أعطال» بثقةٍ خضراء على قاعدةٍ لم تُطبَّق عليها
+ * الهجرة أصلًا — وهو بالضبط نوع الصمت الذي وُجد هذا الجدول ليُنهيه.
+ */
+export async function recentErrors(limit = 20): Promise<{ ready: boolean; rows: ErrorRow[] }> {
   const db = admin();
-  if (!db) return [];
-  const { data } = await db
+  if (!db) return { ready: false, rows: [] };
+
+  const { data, error } = await db
     .from("error_log")
     .select("id, at, source, message, detail, meta")
     .order("at", { ascending: false })
     .limit(limit);
-  return (data ?? []) as ErrorRow[];
+
+  if (error) return { ready: false, rows: [] };
+  return { ready: true, rows: (data ?? []) as ErrorRow[] };
 }
