@@ -13,6 +13,9 @@ const kindStyle: Record<NotificationKind, { label: string; chip: string }> = {
   announcement: { label: d.kindAnnouncement, chip: "border-gold/45 text-gold-light" },
   reminder: { label: d.kindReminder, chip: "border-tick-excused/50 text-tick-excused" },
   system: { label: d.kindSystem, chip: "border-tick-green/50 text-tick-green" },
+  // السؤال برتقاليّ كخانة «غاب»: لونٌ يقول «يخصّك الآن» ولا يشبه إعلانًا
+  // يُقرأ ويُترك. وله وقتٌ ينقضي فعلًا.
+  question: { label: d.kindQuestion, chip: "border-tick-absent/50 text-tick-absent" },
 };
 
 export default function InboxList({ items }: { items: AppNotification[] }) {

@@ -180,6 +180,23 @@ export const strings = {
     kindAnnouncement: "إعلان",
     kindReminder: "تذكير",
     kindSystem: "من النادي",
+    kindQuestion: "سؤال",
+
+    // ── المسابقة ──
+    quizTitle: "سؤال النادي",
+    quizSend: "أرسل إجابتي",
+    quizSending: "جارٍ الإرسال…",
+    quizOnce: "لك محاولة واحدة، فتأنَّ",
+    quizCorrect: "إجابة صحيحة",
+    quizWrong: "إجابة غير صحيحة",
+    quizClosed: "أُغلق هذا السؤال",
+    quizFailed: "تعذّر إرسال إجابتك — أعد المحاولة",
+    quizScore: "نقاطي",
+    quizRank: "الترتيب",
+    quizBoard: "المتصدّرون",
+    quizBoardEmpty: "لم يُجب أحدٌ بعد — كن أوّلهم",
+    quizNoneYet: "لم تُجب عن سؤالٍ بعد",
+    quizAnsweredOf: "أجبتَ عن {n}، أصبتَ في {c}",
 
     // تفعيل التنبيهات على الجهاز
     pushTitle: "تنبيهات الهاتف",

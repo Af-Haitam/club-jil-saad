@@ -140,13 +140,19 @@ jobs:
           VERSION: ${{ inputs.versionName }}
         run: |
           set -euo pipefail
-          APK="$RUNNER_TEMP/club-jil-saad-$VARIANT.apk"
 
+          # اسم الملفّ المنشور غير اسم أثر البناء: العضو ينزّل «club-jil-saad.apk»
+          # لا «club-jil-saad-release.apk»، وصفحة /app تربط بهذا الاسم بعينه.
           if [ "$VARIANT" = "beta" ]; then
             TAG="app-beta"; TITLE="نسخة التجربة $VERSION"; FLAGS="--prerelease"
+            NAME="club-jil-saad-beta.apk"
           else
             TAG="app-latest"; TITLE="تطبيق الأعضاء $VERSION"; FLAGS=""
+            NAME="club-jil-saad.apk"
           fi
+
+          APK="$RUNNER_TEMP/$NAME"
+          cp "$RUNNER_TEMP/club-jil-saad-$VARIANT.apk" "$APK"
 
           SUM=$(sha256sum "$APK" | cut -d' ' -f1)
           SIZE=$(du -m "$APK" | cut -f1)

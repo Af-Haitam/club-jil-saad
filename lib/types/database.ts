@@ -155,7 +155,7 @@ export interface Reminder {
 
 // نسخة المستخدم من الرسالة. تحمل عنوانها ونصّها بنفسها (0005) لأن رسائل
 // المهمّة اليومية لا مصدر لها في جدول آخر — فقراءة الصندوق استعلام واحد.
-export type NotificationKind = "announcement" | "reminder" | "system";
+export type NotificationKind = "announcement" | "reminder" | "system" | "question";
 
 export interface AppNotification {
   id: string;
